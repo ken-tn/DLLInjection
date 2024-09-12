@@ -11,8 +11,6 @@ void init();
 void ShowWindowForm();
 bool Startt(std::string Cmd);
 
-#pragma comment(lib, "ws2_32.lib")
-
 
 bool Changing;
 int State;
@@ -301,6 +299,10 @@ BOOL InitiateWindow()
     return StartMessageLoop();
 }
 
+void ShowWindowForm() {
+    InitiateWindow();
+}
+
 namespace Memory
 {
     bool Compare(const BYTE* pData, const BYTE* bMask, const char* szMask)
@@ -317,41 +319,6 @@ namespace Memory
             if (Compare((BYTE*)(dwAddress + (int)i), bMask, szMask))
                 return (int)(dwAddress + i);
         return 0;
-    }
-    void retcheck()
-    {
-        DWORD addr = 0x140DA6;
-        __asm {
-            pushad
-            pushfd
-            mov eax, addr
-            popfd
-            popad
-            ret
-        }
-    }
-
-    void writebytes(int address, int bytes)
-    {
-        DWORD retcheck, rekt;
-        VirtualProtect((LPVOID)address, bytes, PAGE_EXECUTE_READWRITE, &retcheck);
-        for (int x = 0; x != bytes; x++)
-        {
-            *(BYTE*)(address + x) = 0x90;
-        }
-        VirtualProtect((LPVOID)address, bytes, retcheck, &rekt);
-    }
-
-    void DisableRetcheck()
-    {
-        writebytes(0x5181E4, 39);
-        DWORD b, l;
-        BYTE* rpb_unk = (PBYTE)0x5FC0F2;
-        VirtualProtect((LPVOID)0x5FC0F2, 6, PAGE_EXECUTE_READWRITE, &b);
-        *rpb_unk = 0xE9;
-        *(DWORD*)(rpb_unk + 1) = (DWORD)(0x5FC128 - (DWORD)rpb_unk) - 5;
-        VirtualProtect((LPVOID)retcheck, 1, 1, &b);
-        VirtualProtect((LPVOID)0x5FC0F2, 6, b, &l);
     }
 
     int Scan(DWORD mode, char* content, char* mask)
@@ -419,39 +386,6 @@ DWORD getaddy(int address)
 
 // DWORD ScriptContextVftable = getaddy(0x52D130);
 
-void Console(char* title)
-{
-    AllocConsole();
-    SetConsoleTitleA(title);
-    freopen("CONOUT$", "w", stdout);
-    freopen("CONIN$", "r", stdin);
-    HWND ConsoleHandle = GetConsoleWindow();
-    ::SetWindowPos(ConsoleHandle, HWND_TOPMOST, 0, 0, 0, 0, SWP_DRAWFRAME | SWP_NOMOVE | SWP_NOSIZE | SWP_SHOWWINDOW);
-    ::ShowWindow(ConsoleHandle, SW_NORMAL);
-}
-
-bool Startt(std::string Cmd)
-{
-    std::vector<std::string> Arguments = split(Cmd);
-    // Sleep(2000);
-    if (Arguments.size() == 0)
-    {
-        return false;
-    }
-
-    return 0;
-}
-
-BOOL WINAPI DllMain(HINSTANCE hinstDLL, DWORD fdwReason, LPVOID lpvReserved)
-{
-    if (fdwReason == DLL_PROCESS_ATTACH)
-    {
-        DisableThreadLibraryCalls(hinstDLL);
-        CreateThread(0, 0, (LPTHREAD_START_ROUTINE)InitiateWindow, 0, 0, 0); // RVX
-    }
-    return 1;
-}
-
 void init()
 {
     Print(txtbox, "Checking for Filtering Enabled & Disabled Games...\r\n");
@@ -491,4 +425,38 @@ void init()
     lua_pcall(lua_State, 1, 0, 0);*/
 
     CreateThread(NULL, NULL, (LPTHREAD_START_ROUTINE)Loop, NULL, NULL, NULL);
+}
+
+
+void Console(char* title)
+{
+    AllocConsole();
+    SetConsoleTitleA(title);
+    freopen("CONOUT$", "w", stdout);
+    freopen("CONIN$", "r", stdin);
+    HWND ConsoleHandle = GetConsoleWindow();
+    ::SetWindowPos(ConsoleHandle, HWND_TOPMOST, 0, 0, 0, 0, SWP_DRAWFRAME | SWP_NOMOVE | SWP_NOSIZE | SWP_SHOWWINDOW);
+    ::ShowWindow(ConsoleHandle, SW_NORMAL);
+}
+
+bool Startt(std::string Cmd)
+{
+    std::vector<std::string> Arguments = split(Cmd);
+    // Sleep(2000);
+    if (Arguments.size() == 0)
+    {
+        return false;
+    }
+
+    return 0;
+}
+
+BOOL WINAPI DllMain(HINSTANCE hinstDLL, DWORD fdwReason, LPVOID lpvReserved)
+{
+    if (fdwReason == DLL_PROCESS_ATTACH)
+    {
+        DisableThreadLibraryCalls(hinstDLL);
+        CreateThread(0, 0, (LPTHREAD_START_ROUTINE)ShowWindowForm, 0, 0, 0); //RVX
+    }
+    return 1;
 }

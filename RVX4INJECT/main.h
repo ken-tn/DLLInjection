@@ -4,18 +4,28 @@
 #include <conio.h>
 #include <stdio.h>
 #include <iostream>
+#include <tchar.h>
+#include <wchar.h>
 
-BOOL Inject(DWORD pID, const char * DLL_NAME);
-DWORD GetTargetThreadIDFromProcName(const char * ProcName);
+// Define UNICODE_STRING structure
+typedef struct _UNICODE_STRING {
+    USHORT Length;
+    USHORT MaximumLength;
+    PWSTR Buffer;
+} UNICODE_STRING, * PUNICODE_STRING;
+
+// Function pointer type for LdrLoadDll
+typedef NTSTATUS(NTAPI* _LdrLoadDll)(
+    PWSTR PathToFile,
+    ULONG Flags,
+    PUNICODE_STRING ModuleFileName,
+    PHANDLE ModuleHandle
+);
+
+BOOL Inject(DWORD pID, const char* DLL_NAME);
+DWORD GetTargetThreadIDFromProcName(const wchar_t* ProcName);
 typedef LONG(NTAPI *NtSuspendProcess)(IN HANDLE ProcessHandle);
 typedef LONG(NTAPI *NtResumeProcess)(IN HANDLE ProcessHandle);
-std::string ws2s(const std::wstring& wstr)
-{
-	int size_needed = WideCharToMultiByte(CP_ACP, 0, wstr.c_str(), int(wstr.length() + 1), 0, 0, 0, 0);
-	std::string strTo(size_needed, 0);
-	WideCharToMultiByte(CP_ACP, 0, wstr.c_str(), int(wstr.length() + 1), &strTo[0], size_needed, 0, 0);
-	return strTo;
-}
 
-bool InjectDLL(char* ProcessName);
-BOOL Inject(DWORD TargetProcessId, const char* DLL_PATH);
+bool InjectDLL(const wchar_t* ProcessName);
+BOOL Inject(DWORD pID, const wchar_t* DLL_NAME);
