@@ -28,8 +28,8 @@
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectGuid>{401B7C6A-EE94-4B8D-87A4-44676590BBB0}</ProjectGuid>
-    <RootNamespace>Diox</RootNamespace>
-    <ProjectName>RVX4</ProjectName>
+    <RootNamespace>Kent</RootNamespace>
+    <ProjectName>Firm</ProjectName>
     <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
@@ -122,6 +122,7 @@
   <ItemGroup>
     <ClInclude Include="detours.h" />
     <ClInclude Include="LUA.h" />
+    <ClInclude Include="MainFunctions.h" />
     <ClInclude Include="Memcheck.h" />
     <ClInclude Include="Segment.h" />
     <ClInclude Include="stdafx.h" />

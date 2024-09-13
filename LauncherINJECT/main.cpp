@@ -84,9 +84,9 @@ inline bool InjectDLL(DWORD pID)
 	// Get the full path of the DLL (wide-character version)
 	// wchar_t buf[MAX_PATH] = {0};
 	char buf2[MAX_PATH] = {};
-	// GetFullPathNameW(L"RVX4.dll", MAX_PATH, buf, NULL);
+	// GetFullPathNameW(L"Firm.dll", MAX_PATH, buf, NULL);
 #ifdef _DEBUG
-	GetFullPathNameA("../x64/Debug/RVX4.dll", MAX_PATH, buf2, NULL);
+	GetFullPathNameA("../x64/Debug/Firm.dll", MAX_PATH, buf2, NULL);
 	printf(buf2);
 #endif
 

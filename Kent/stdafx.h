@@ -14,3 +14,10 @@
 
 
 // TODO: reference additional headers your program requires here
+#include <iostream>
+#include <string>
+#include <vector>
+#include <sstream>
+#include <regex>
+#include <codecvt>
+#include <stdlib.h>

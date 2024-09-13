@@ -3,9 +3,9 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.10.35201.131
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "RVX4", "Diox\Diox.vcxproj", "{401B7C6A-EE94-4B8D-87A4-44676590BBB0}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Launcher", "Kent\Firm.vcxproj", "{401B7C6A-EE94-4B8D-87A4-44676590BBB0}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Injector", "RVX4INJECT\Injector.vcxproj", "{9C3B802D-3F91-41E5-9682-4FD2A62E248D}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Injector", "LauncherINJECT\Injector.vcxproj", "{9C3B802D-3F91-41E5-9682-4FD2A62E248D}"
 	ProjectSection(ProjectDependencies) = postProject
 		{401B7C6A-EE94-4B8D-87A4-44676590BBB0} = {401B7C6A-EE94-4B8D-87A4-44676590BBB0}
 	EndProjectSection

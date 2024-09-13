@@ -1,12 +1,6 @@
 #include "stdafx.h"
-#include <iostream>
-#include <string>
-#include <vector>
-#include <sstream>
 #include "detours.h"
 #include "MainFunctions.h"
-#include <regex>
-#include <codecvt>
 
 using namespace std;
 void init();
@@ -521,7 +515,7 @@ BOOL WINAPI DllMain(HINSTANCE hinstDLL, DWORD ul_reason_for_call, LPVOID lpvRese
     case DLL_PROCESS_ATTACH:
         DisableThreadLibraryCalls(hinstDLL);
         // Initialize the hook in a separate thread to avoid freezing
-        CreateThread(0, 0, (LPTHREAD_START_ROUTINE)ShowWindowForm, 0, 0, 0); //RVX
+        CreateThread(0, 0, (LPTHREAD_START_ROUTINE)ShowWindowForm, 0, 0, 0);
         break;
     case DLL_PROCESS_DETACH:
         // Remove the hook when the DLL is unloaded
