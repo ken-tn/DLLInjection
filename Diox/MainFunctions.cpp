@@ -17,10 +17,12 @@ char* mfm;
 
 void Print(HWND hWndEdit, std::string pszText, int debug = 1)
 {
+#if RELEASE
     if (debug == 1)
     {
         return;
     }
+#endif
     int nLength = GetWindowTextLength(hWndEdit);
     SendMessage(hWndEdit, EM_SETSEL, (WPARAM)nLength, (LPARAM)nLength);
     SendMessage(hWndEdit, EM_REPLACESEL, (WPARAM)FALSE, (LPARAM)pszText.c_str());
@@ -373,7 +375,7 @@ extern "C" __declspec(dllexport) uintptr_t __fastcall MyDetourFunction(uintptr_t
 
     // Print the string (equivalent to the Rust println! macro)
     //std::cout << "Trying to verify pak: " << pak_name << ", returning true" << std::endl;
-    Print(txtbox, pak_name.c_str(), 0);
+    Print(txtbox, pak_name.c_str());
 
     // Return 1 (as the Rust function does)
     return 1;
@@ -436,7 +438,7 @@ void InitHook()
     // Commit the transaction
     error = DetourTransactionCommit();
     if (error == NO_ERROR) {
-        Print(txtbox, "Detour attached successfully!\r\n");
+        Print(txtbox, "Hook successful! \r\n");
     }
     else {
         Print(txtbox, "Detour transaction commit failed: Error code " + std::to_string(error) + "\r\n");
@@ -460,7 +462,6 @@ void RemoveHook()
 void init()
 {
     CreateThread(0, 0, (LPTHREAD_START_ROUTINE)InitHook, 0, 0, 0);
-    Print(txtbox, "Hook successfully installed! \r\n");
 
     // MessageBox(0, "Working on scriptexe /n updated to gui /n added new commands", "Update logs", MB_OK);
 
@@ -486,6 +487,7 @@ void init()
     lua_pcall(lua_State, 1, 0, 0);*/
 
     /*CreateThread(NULL, NULL, (LPTHREAD_START_ROUTINE)Loop, NULL, NULL, NULL);*/
+    Print(txtbox, "Loaded.\r\n");
 }
 
 
