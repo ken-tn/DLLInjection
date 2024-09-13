@@ -6,10 +6,7 @@
 #include "detours.h"
 #include "MainFunctions.h"
 #include <regex>
-
-//#if defined _M_X64
-//#pragma comment(lib, "libMinHook.x64.lib")
-//#endif
+#include <codecvt>
 
 using namespace std;
 void init();
@@ -383,26 +380,21 @@ int ScriptContextVftable;
 int ScriptContext;
 
 //  Original function pointer (trampoline)
-typedef uintptr_t(__fastcall* MyFunctionType)(Registers* reg, uintptr_t, uintptr_t);
+typedef uintptr_t(__stdcall* MyFunctionType)(Registers* reg, uintptr_t, uintptr_t);
 MyFunctionType originalFunction = nullptr;
 
 // Helper function to convert wide character string (wchar_t*) to a standard std::string
-std::string wstring_to_string(const wchar_t* wstr)
+std::string ws2s(const std::wstring& wstr)
 {
-    int size_needed = WideCharToMultiByte(CP_UTF8, 0, wstr, -1, NULL, 0, NULL, NULL);
-    if (size_needed <= 0) {
-        return ""; // Error or empty string handling
-    }
+    using convert_typeX = std::codecvt_utf8<wchar_t>;
+    std::wstring_convert<convert_typeX, wchar_t> converterX;
 
-    std::string result(size_needed, 0);
-    WideCharToMultiByte(CP_UTF8, 0, wstr, -1, &result[0], size_needed, NULL, NULL);
-    return result;
+    return converterX.to_bytes(wstr);
 }
 
 // Detour function, ensure this matches the x64 calling convention
-extern "C" __declspec(dllexport) uintptr_t __fastcall MyDetourFunction(Registers* reg, uintptr_t a1, uintptr_t a2)
+extern "C" __declspec(dllexport) uintptr_t __stdcall MyDetourFunction(Registers* reg, uintptr_t a1, uintptr_t a2)
 {
-    Print(txtbox, "Intercepted.");
     // uintptr_t result = originalFunction(reg, a1, a2);
 
     // Return the original result or modify as needed
@@ -416,11 +408,11 @@ extern "C" __declspec(dllexport) uintptr_t __fastcall MyDetourFunction(Registers
     wchar_t* wstr = reinterpret_cast<wchar_t*>(*((uintptr_t*)(reg->rcx + 8)));
 
     // Convert the wide string (wchar_t*) to a standard string
-    std::string pak_name = wstring_to_string(wstr);
+    std::string pak_name = ws2s(wstr);
 
     // Print the string (equivalent to the Rust println! macro)
     //std::cout << "Trying to verify pak: " << pak_name << ", returning true" << std::endl;
-    Print(txtbox, "Trying to verify pak " + pak_name);
+    Print(txtbox, "Trying to verify pak " + pak_name + "\r\n");
 
     // Return 1 (as the Rust function does)
     return 1;
@@ -447,6 +439,13 @@ void InitHook()
         Print(txtbox, "Invalid address for SigCheck\r\n");
         return;
     }
+
+    // wait for anticheat to load
+    int value = *reinterpret_cast<int*>(SigCheck);
+    while (*reinterpret_cast<int*>(SigCheck) == value) {
+        Sleep(10);
+    }
+
     // Use a stringstream to format the address as hex with uppercase letters
     std::stringstream s2;
     s2 << "Got siggy: " << std::hex << std::uppercase << SigCheck << "\r\n";
@@ -483,9 +482,6 @@ void InitHook()
     else {
         Print(txtbox, "Detour transaction commit failed: Error code " + std::to_string(error) + "\r\n");
     }
-    Print(txtbox, "nemui zzz\r\n");
-    Sleep(INFINITE);
-    Print(txtbox, "will never print\r\n");
 }
 
 
@@ -504,7 +500,7 @@ void RemoveHook()
 
 void init()
 {
-    thread = CreateThread(0, 0, (LPTHREAD_START_ROUTINE)InitHook, 0, 0, 0);
+    mthread = CreateThread(0, 0, (LPTHREAD_START_ROUTINE)InitHook, 0, 0, 0);
     Print(txtbox, "Hook successfully installed! \r\n");
     Print(txtbox, "Done \r\n");
 

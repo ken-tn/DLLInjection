@@ -8,4 +8,4 @@ struct Registers {
     // other registers...
 };
 
-HANDLE thread = nullptr;
+HANDLE mthread = nullptr;

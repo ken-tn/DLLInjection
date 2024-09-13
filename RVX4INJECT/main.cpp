@@ -30,53 +30,53 @@ DWORD GetTargetThreadIDFromProcName(const wchar_t* ProcName) {
 	return 0;  // Return 0 if no matching process is found
 }
 
-//inline BOOL Inject(DWORD pID, const char * DLL_NAME) {
-//	if (!pID)
-//	{
-//		printf("Failed at pID.\n");
-//		return false;
-//	}
-//
-//	HANDLE ProcessHandle = OpenProcess(PROCESS_ALL_ACCESS, FALSE, pID);
-//	if (!ProcessHandle)
-//	{
-//		printf("Failed at ProcessHandle.\n");
-//		return false;
-//	}
-//
-//	HMODULE Kernel32 = GetModuleHandleA("kernel32.dll");
-//	if (!Kernel32)
-//	{
-//		printf("Failed at Kernel32.\n");
-//		return false;
-//	}
-//	LPVOID LoadLibAddy = GetProcAddress(Kernel32, "LoadLibraryA");
-//	LPVOID RemoteString = VirtualAllocEx(ProcessHandle, 0, strlen(DLL_NAME),  MEM_RESERVE | MEM_COMMIT, PAGE_READWRITE);
-//	if (!RemoteString)
-//	{
-//		DWORD error = GetLastError();
-//		printf("VirtualAllocEx failed with error code: %d\n", error);
-//		return false;
-//	}
-//	WriteProcessMemory(ProcessHandle, RemoteString, DLL_NAME, strlen(DLL_NAME), NULL);
-//	HANDLE RemoteThread = CreateRemoteThread(ProcessHandle, 0, 0, (LPTHREAD_START_ROUTINE)LoadLibAddy, RemoteString, 0, 0);
-//	if (!RemoteThread)
-//	{
-//		printf("Failed at RemoteThread.\n");
-//		return false;
-//	}
-//	while (true)
-//	{
-//		DWORD status = WaitForSingleObject(RemoteThread, INFINITE);
-//		if (status == WAIT_OBJECT_0)
-//		{
-//			break;
-//		}
-//	}
-//	printf("Executed DLLMain.\n");
-//	CloseHandle(ProcessHandle);
-//	return true;
-//}
+inline BOOL Inject(DWORD pID, const char * DLL_NAME) {
+	if (!pID)
+	{
+		printf("Failed at pID.\n");
+		return false;
+	}
+
+	HANDLE ProcessHandle = OpenProcess(PROCESS_ALL_ACCESS, FALSE, pID);
+	if (!ProcessHandle)
+	{
+		printf("Failed at ProcessHandle.\n");
+		return false;
+	}
+
+	HMODULE Kernel32 = GetModuleHandleA("kernel32.dll");
+	if (!Kernel32)
+	{
+		printf("Failed at Kernel32.\n");
+		return false;
+	}
+	LPVOID LoadLibAddy = GetProcAddress(Kernel32, "LoadLibraryA");
+	LPVOID RemoteString = VirtualAllocEx(ProcessHandle, 0, strlen(DLL_NAME),  MEM_RESERVE | MEM_COMMIT, PAGE_READWRITE);
+	if (!RemoteString)
+	{
+		DWORD error = GetLastError();
+		printf("VirtualAllocEx failed with error code: %d\n", error);
+		return false;
+	}
+	WriteProcessMemory(ProcessHandle, RemoteString, DLL_NAME, strlen(DLL_NAME), NULL);
+	HANDLE RemoteThread = CreateRemoteThread(ProcessHandle, 0, 0, (LPTHREAD_START_ROUTINE)LoadLibAddy, RemoteString, 0, 0);
+	if (!RemoteThread)
+	{
+		printf("Failed at RemoteThread.\n");
+		return false;
+	}
+	while (true)
+	{
+		DWORD status = WaitForSingleObject(RemoteThread, INFINITE);
+		if (status == WAIT_OBJECT_0)
+		{
+			break;
+		}
+	}
+	printf("Executed DLLMain.\n");
+	CloseHandle(ProcessHandle);
+	return true;
+}
 
 //inline BOOL Inject(DWORD pID, const wchar_t* DLL_NAME) {
 //	if (!pID)
@@ -253,64 +253,64 @@ DWORD GetTargetThreadIDFromProcName(const wchar_t* ProcName) {
 //    return true;
 //}
 
-inline BOOL Inject(DWORD pID, const char* DLL_NAME) {
-	HINSTANCE hInjectionMod = LoadLibrary(GH_INJ_MOD_NAME);
-
-	auto InjectA = (f_InjectA)GetProcAddress(hInjectionMod, "InjectA");
-	auto GetSymbolState = (f_GetSymbolState)GetProcAddress(hInjectionMod, "GetSymbolState");
-	auto GetImportState = (f_GetSymbolState)GetProcAddress(hInjectionMod, "GetImportState");
-	auto StartDownload = (f_StartDownload)GetProcAddress(hInjectionMod, "StartDownload");
-	auto GetDownloadProgressEx = (f_GetDownloadProgressEx)GetProcAddress(hInjectionMod, "GetDownloadProgressEx");
-
-	//due to a minor bug in the current version you have to wait a bit before starting the download
-		//will be fixed in version 4.7
-	// Sleep(500);
-
-	// StartDownload();
-
-	//since GetSymbolState and GetImportState only return after the downloads are finished 
-		//checking the download progress is not necessary
-	while (GetDownloadProgressEx(PDB_DOWNLOAD_INDEX_NTDLL, false) != 1.0f)
-	{
-		Sleep(10);
-	}
-
-#ifdef _WIN64
-	while (GetDownloadProgressEx(PDB_DOWNLOAD_INDEX_NTDLL, true) != 1.0f)
-	{
-		Sleep(10);
-	}
-#endif
-
-	while (GetSymbolState() != 0)
-	{
-		Sleep(10);
-	}
-
-	while (GetImportState() != 0)
-	{
-		Sleep(10);
-	}
-
-	INJECTIONDATAA data =
-	{
-		"",
-		pID,
-		INJECTION_MODE::IM_LoadLibraryExW,
-		LAUNCH_METHOD::LM_NtCreateThreadEx,
-		NULL, //INJ_ERASE_HEADER
-		(DWORD)0,
-		NULL,
-		NULL,
-		true
-	};
-
-	strcpy(data.szDllPath, DLL_NAME);
-
-	InjectA(&data);
-
-	return true;
-}
+//inline BOOL Inject(DWORD pID, const char* DLL_NAME) {
+//	HINSTANCE hInjectionMod = LoadLibrary(GH_INJ_MOD_NAME);
+//
+//	auto InjectA = (f_InjectA)GetProcAddress(hInjectionMod, "InjectA");
+//	auto GetSymbolState = (f_GetSymbolState)GetProcAddress(hInjectionMod, "GetSymbolState");
+//	auto GetImportState = (f_GetSymbolState)GetProcAddress(hInjectionMod, "GetImportState");
+//	auto StartDownload = (f_StartDownload)GetProcAddress(hInjectionMod, "StartDownload");
+//	auto GetDownloadProgressEx = (f_GetDownloadProgressEx)GetProcAddress(hInjectionMod, "GetDownloadProgressEx");
+//
+//	//due to a minor bug in the current version you have to wait a bit before starting the download
+//		//will be fixed in version 4.7
+//	Sleep(10);
+//
+//	StartDownload();
+//
+//	//since GetSymbolState and GetImportState only return after the downloads are finished 
+//		//checking the download progress is not necessary
+//	while (GetDownloadProgressEx(PDB_DOWNLOAD_INDEX_NTDLL, false) != 1.0f)
+//	{
+//		Sleep(10);
+//	}
+//
+//#ifdef _WIN64
+//	while (GetDownloadProgressEx(PDB_DOWNLOAD_INDEX_NTDLL, true) != 1.0f)
+//	{
+//		Sleep(10);
+//	}
+//#endif
+//
+//	while (GetSymbolState() != 0)
+//	{
+//		Sleep(10);
+//	}
+//
+//	while (GetImportState() != 0)
+//	{
+//		Sleep(10);
+//	}
+//
+//	INJECTIONDATAA data =
+//	{
+//		"",
+//		pID,
+//		INJECTION_MODE::IM_LdrLoadDll,
+//		LAUNCH_METHOD::LM_NtCreateThreadEx,
+//		NULL, //INJ_ERASE_HEADER
+//		(DWORD)0,
+//		NULL,
+//		NULL,
+//		true
+//	};
+//
+//	strcpy(data.szDllPath, DLL_NAME);
+//
+//	InjectA(&data);
+//
+//	return true;
+//}
 
 //inline BOOL Inject(DWORD pID, const wchar_t* DLL_NAME) {
 //	if (!pID)
@@ -511,22 +511,23 @@ inline bool InjectDLL(const wchar_t* ProcessName)
 
 int main() {
 	SetConsoleTitle("Injector");
-	printf("Looking for target...\n");
+	printf("Waiting for target...\n");
 	wchar_t* ProcessName = L"Client-Win64-Shipping.exe";
 	DWORD pID = GetTargetThreadIDFromProcName(ProcessName);
-	printf("%lu\n", pID);
 	while (!pID) {
 		pID = GetTargetThreadIDFromProcName(ProcessName);
-		Sleep(10);
+		Sleep(50);
 	}
-	if (!pID) {
+	/*if (!pID) {
 		printf("ERROR: Failed to find WW.\n");
 		system("PAUSE");
 	}
 	else {
 		printf("Found WW!\n");
 		InjectDLL(ProcessName);
-	}
+	}*/
+	printf("Found WW!\n");
+	InjectDLL(ProcessName);
 	system("PAUSE");
 
 	return 1;
