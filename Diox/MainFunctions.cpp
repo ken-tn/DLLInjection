@@ -17,7 +17,7 @@ char* mfm;
 
 void Print(HWND hWndEdit, std::string pszText, int debug = 1)
 {
-#if RELEASE
+#ifdef _RELEASE
     if (debug == 1)
     {
         return;

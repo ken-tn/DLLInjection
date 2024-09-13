@@ -76,24 +76,26 @@ inline BOOL Inject(DWORD pID, const char * DLL_NAME) {
 	return true;
 }
 
-inline bool InjectDLL(const wchar_t* ProcessName)
+inline bool InjectDLL(DWORD pID)
 {
 	// Get the process ID of the target process by name
-	DWORD pID = GetTargetThreadIDFromProcName(ProcessName);
+	// DWORD pID = GetTargetThreadIDFromProcName(ProcessName);
 
 	// Get the full path of the DLL (wide-character version)
 	// wchar_t buf[MAX_PATH] = {0};
 	char buf2[MAX_PATH] = {};
 	// GetFullPathNameW(L"RVX4.dll", MAX_PATH, buf, NULL);
+#ifdef _DEBUG
 	GetFullPathNameA("../x64/Debug/RVX4.dll", MAX_PATH, buf2, NULL);
 	printf(buf2);
+#endif
 
 	// Wait for the process ID to become available
-	do
+	/*do
 	{
 		pID = GetTargetThreadIDFromProcName(ProcessName);
 		Sleep(10);
-	} while (pID == 0);
+	} while (pID == 0);*/
 
 	// Open the target process with required access
 	HANDLE processHandle = OpenProcess(PROCESS_ALL_ACCESS, FALSE, pID);
@@ -144,10 +146,8 @@ inline bool InjectDLL(const wchar_t* ProcessName)
 	return true;
 }
 
-int main() {
-	SetConsoleTitle("Injector");
-	// Path to the executable you want to run
-	const char* exePath = "G:\\WuwaBeta\\wuwa-beta-downloader\\Wuthering Waves Game\\Client\\Binaries\\Win64\\Client-Win64-Shipping.exe";
+BOOL StartProcess(const char* ExecutablePath)
+{
 	// Initialize the STARTUPINFO and PROCESS_INFORMATION structures
 	STARTUPINFOA si;
 	PROCESS_INFORMATION pi;
@@ -157,7 +157,7 @@ int main() {
 
 	// Start the process
 	if (CreateProcessA(
-		exePath,          // Application name
+		ExecutablePath,          // Application name
 		NULL,             // Command line arguments (NULL if no arguments)
 		NULL,             // Process handle not inheritable
 		NULL,             // Thread handle not inheritable
@@ -167,37 +167,36 @@ int main() {
 		NULL,             // Use parent's starting directory
 		&si,              // Pointer to STARTUPINFO structure
 		&pi)              // Pointer to PROCESS_INFORMATION structure
-		) {
+		)
+	{
 		printf("Process started successfully!");
-
-		printf("Waiting for target...\n");
-		wchar_t* ProcessName = L"Client-Win64-Shipping.exe";
-		DWORD pID = GetTargetThreadIDFromProcName(ProcessName);
-		while (!pID) {
-			pID = GetTargetThreadIDFromProcName(ProcessName);
-			Sleep(50);
-		}
-		/*if (!pID) {
-			printf("ERROR: Failed to find WW.\n");
-			system("PAUSE");
-		}
-		else {
-			printf("Found WW!\n");
-			InjectDLL(ProcessName);
-		}*/
-		printf("Found WW!\n");
-		InjectDLL(ProcessName);
+		InjectDLL(pi.dwProcessId);
 
 		// Wait until the process exits
-		//WaitForSingleObject(pi.hProcess, INFINITE);
+		WaitForSingleObject(pi.hProcess, INFINITE);
 
 		//// Close process and thread handles
-		//CloseHandle(pi.hProcess);
-		//CloseHandle(pi.hThread);
-	}
-	else {
-		printf("Failed to start process.");
-	}
+		CloseHandle(pi.hProcess);
+		CloseHandle(pi.hThread);
 
+		return 1;
+	}
+	else
+	{
+		printf("Failed to start process.");
+		return 0;
+	}
+}
+
+int main() {
+#ifdef _RELEASE
+	#pragma comment(linker, "/SUBSYSTEM:windows /ENTRY:mainCRTStartup")
+#endif
+	SetConsoleTitle("Launcher");
+	// Path to the executable you want to run
+	const char* exePath = "G:\\WuwaBeta\\wuwa-beta-downloader\\Wuthering Waves Game\\Client\\Binaries\\Win64\\Client-Win64-Shipping.exe";
+	
+	StartProcess(exePath);
+	
 	return 1;
 }
