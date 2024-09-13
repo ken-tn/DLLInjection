@@ -10,4 +10,4 @@ struct Registers {
 };
 
 HANDLE mthread = nullptr;
-void Print(HWND hWndEdit, std::string pszText, int debug = 1);
+void Print(HWND hWndEdit, std::string pszText, int debug);
