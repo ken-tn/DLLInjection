@@ -146,24 +146,58 @@ inline bool InjectDLL(const wchar_t* ProcessName)
 
 int main() {
 	SetConsoleTitle("Injector");
-	printf("Waiting for target...\n");
-	wchar_t* ProcessName = L"Client-Win64-Shipping.exe";
-	DWORD pID = GetTargetThreadIDFromProcName(ProcessName);
-	while (!pID) {
-		pID = GetTargetThreadIDFromProcName(ProcessName);
-		Sleep(50);
-	}
-	/*if (!pID) {
-		printf("ERROR: Failed to find WW.\n");
-		system("PAUSE");
-	}
-	else {
+	// Path to the executable you want to run
+	const char* exePath = "G:\\WuwaBeta\\wuwa-beta-downloader\\Wuthering Waves Game\\Client\\Binaries\\Win64\\Client-Win64-Shipping.exe";
+	// Initialize the STARTUPINFO and PROCESS_INFORMATION structures
+	STARTUPINFOA si;
+	PROCESS_INFORMATION pi;
+	ZeroMemory(&si, sizeof(si));
+	si.cb = sizeof(si);
+	ZeroMemory(&pi, sizeof(pi));
+
+	// Start the process
+	if (CreateProcessA(
+		exePath,          // Application name
+		NULL,             // Command line arguments (NULL if no arguments)
+		NULL,             // Process handle not inheritable
+		NULL,             // Thread handle not inheritable
+		FALSE,            // Set handle inheritance to FALSE
+		0,                // No creation flags
+		NULL,             // Use parent's environment block
+		NULL,             // Use parent's starting directory
+		&si,              // Pointer to STARTUPINFO structure
+		&pi)              // Pointer to PROCESS_INFORMATION structure
+		) {
+		printf("Process started successfully!");
+
+		printf("Waiting for target...\n");
+		wchar_t* ProcessName = L"Client-Win64-Shipping.exe";
+		DWORD pID = GetTargetThreadIDFromProcName(ProcessName);
+		while (!pID) {
+			pID = GetTargetThreadIDFromProcName(ProcessName);
+			Sleep(50);
+		}
+		/*if (!pID) {
+			printf("ERROR: Failed to find WW.\n");
+			system("PAUSE");
+		}
+		else {
+			printf("Found WW!\n");
+			InjectDLL(ProcessName);
+		}*/
 		printf("Found WW!\n");
 		InjectDLL(ProcessName);
-	}*/
-	printf("Found WW!\n");
-	InjectDLL(ProcessName);
-	system("PAUSE");
+
+		// Wait until the process exits
+		//WaitForSingleObject(pi.hProcess, INFINITE);
+
+		//// Close process and thread handles
+		//CloseHandle(pi.hProcess);
+		//CloseHandle(pi.hThread);
+	}
+	else {
+		printf("Failed to start process.");
+	}
 
 	return 1;
 }

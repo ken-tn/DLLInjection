@@ -13,67 +13,14 @@ void init();
 void ShowWindowForm();
 bool Startt(std::string Cmd);
 
-
-bool Changing;
-int State;
-// Trying something else in some minutes
-void doState()
-{
-    if (Changing == true)
-    {
-    }
-}
-
 char* mfm;
 
-void Loop()
+void Print(HWND hWndEdit, std::string pszText, int debug = 1)
 {
-    do
+    if (debug == 1)
     {
-        __try
-        {
-            doState();
-        }
-        __except (EXCEPTION_EXECUTE_HANDLER)
-        {
-            Sleep(1); // do absolutely fucking nothing
-        }
-    } while (true);
-}
-
-const char* Commands =
-// \r\n
-"kill [p] - Kill's the [p], set's [p]'s health to 0.\r\n"
-"god [p] - Set's [p]'s maxhealth to infinite.\r\n"
-"ungod [p] - Set's [p]'s maxhealth back too 100.\r\n"
-"noclip - Toggles noclip.\r\n"
-"airwalk - Toggles airwalk.\r\n"
-"swim - Toggles swim.\r\n"
-"superjump - Toggles jump.\r\n"
-"jesusfly - Toggles fly.\r\n"
-"ragdoll - Toggles ragdoll.\r\n"
-"disable - Disables all localplayer cmds.\r\n"
-"ws [p] [n] - Set's [p]'s walkspeed to [n].\r\n"
-"sethealth [p] [n] - Set's [p]'s health to [n].\r\n"
-"jumppower [p] [n] - Set's [p]'s jump to [n].\r\n"
-"shutdown - Shutsdown the game & server.\r\n"
-"btools [p] - Give's [p] btools.\r\n"
-"kick [p] - Kick's the [p] from game.\r\n"
-"freeze [p] - Freezes player. \r\n"
-"fog [n] - Sets Fog to [n} (set fog to 10000 to turn fog off). \r\n"
-"time [n] - Sets time to [n]. \r\n"
-"night - Sets time to night. \r\n"
-"day - Sets time to day. \r\n"
-"freeze [p] - Freezes player. \r\n"
-"thaw [p] - Unfreezes player. \r\n"
-"heal [p] - heals damaged player. \r\n"
-"dusk - sets time to dusk. \r\n"
-"stools [p] - Steals [p]'s tools. \r\n"
-"purge on/off - changes lighting and fog. \r\n"
-"explore - Explores the games Workspace. \r\n";
-
-void Print(HWND hWndEdit, std::string pszText)
-{
+        return;
+    }
     int nLength = GetWindowTextLength(hWndEdit);
     SendMessage(hWndEdit, EM_SETSEL, (WPARAM)nLength, (LPARAM)nLength);
     SendMessage(hWndEdit, EM_REPLACESEL, (WPARAM)FALSE, (LPARAM)pszText.c_str());
@@ -124,7 +71,7 @@ LRESULT CALLBACK DLLWindowProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lP
             break;
 
         case MALX_CREDITS:
-            MessageBox(hwnd, "Created by DionRBLX ", "Credits", MB_OKCANCEL);
+            MessageBox(hwnd, "- kent911t", "Credits", MB_OKCANCEL);
             break;
 
         case MALX_COMMANDS:
@@ -190,21 +137,21 @@ BOOL CreateSubwindows()
     //  execute = CreateWindowEx(NULL, "button", "Execute Command", WS_CHILD | WS_VISIBLE | WS_BORDER, 1, 400, 100, 36, MainWindow, NULL, NULL, NULL);//Top prority makeit work
     txtbox = CreateWindowEx(NULL, "EDIT", "", WS_CHILD | WS_BORDER | WS_VSCROLL | ES_MULTILINE | WS_VISIBLE | ES_READONLY | ES_AUTOVSCROLL, 10, 20, 520, 200, MainWindow, (HMENU)ALX_CONSOLE_WINDOW, HInstance, 0);
     HWND consoleFieldLabel = CreateWindowEx(NULL, "STATIC", "", WS_CHILD | WS_VISIBLE, 10, 0, 500, 20, MainWindow, NULL, HInstance, NULL);
-    InputField = CreateWindowEx(NULL, "EDIT", "", WS_CHILD | WS_BORDER | ES_MULTILINE | WS_VISIBLE, 10, 250, 500, 20, MainWindow, (HMENU)ALX_INPUT_FIELD, HInstance, 0);
+    /*InputField = CreateWindowEx(NULL, "EDIT", "", WS_CHILD | WS_BORDER | ES_MULTILINE | WS_VISIBLE, 10, 250, 500, 20, MainWindow, (HMENU)ALX_INPUT_FIELD, HInstance, 0);
     HWND inputFieldLabel = CreateWindowEx(NULL, "STATIC", "", WS_CHILD | WS_VISIBLE, 10, 230, 500, 20, MainWindow, NULL, HInstance, NULL);
     SendMessage(inputFieldLabel, WM_SETTEXT, NULL, (LPARAM)"Scriptexe and commandexe");
-    SendMessage(consoleFieldLabel, WM_SETTEXT, NULL, (LPARAM)"Checks and console");
-    SendMessage(InputField, EM_SETLIMITTEXT, INPUT_CHAR_LIMIT, NULL);
+    SendMessage(consoleFieldLabel, WM_SETTEXT, NULL, (LPARAM)"Console");
+    SendMessage(InputField, EM_SETLIMITTEXT, INPUT_CHAR_LIMIT, NULL);*/
 
     // WaypointBox = CreateWindowEx(NULL, "LISTBOX", "", WS_CHILD | WS_BORDER | WS_VSCROLL | WS_VISIBLE, 10, 280, 520, 100, MainWindow, (HMENU)ALX_WAYPOINT_BOX, HInstance, 0);
     // SendMessage(WaypointBox, LVM_SETITEMTEXT, )
 
     HFONT textFont = CreateFont(18, 0, 0, 0, FW_LIGHT, FALSE, FALSE, FALSE, DEFAULT_CHARSET, OUT_OUTLINE_PRECIS, CLIP_DEFAULT_PRECIS, CLEARTYPE_QUALITY, VARIABLE_PITCH, TEXT("Segoe UI"));
 
-    SendMessage(inputFieldLabel, WM_SETFONT, (WPARAM)textFont, MAKELPARAM(TRUE, 0));
+    // SendMessage(inputFieldLabel, WM_SETFONT, (WPARAM)textFont, MAKELPARAM(TRUE, 0));
     SendMessage(consoleFieldLabel, WM_SETFONT, (WPARAM)textFont, MAKELPARAM(TRUE, 0));
     SendMessage(txtbox, WM_SETFONT, (WPARAM)textFont, MAKELPARAM(TRUE, 0));
-    SendMessage(InputField, WM_SETFONT, (WPARAM)textFont, MAKELPARAM(TRUE, 0));
+    // SendMessage(InputField, WM_SETFONT, (WPARAM)textFont, MAKELPARAM(TRUE, 0));
 
     UpdateWindow(MainWindow);
 
@@ -219,13 +166,11 @@ BOOL CreateWindowMenu()
 
     HMENU mainDropdown = CreatePopupMenu();
     AppendMenu(mainDropdown, MF_STRING, MALX_EXIT, "Exit");
-    AppendMenu(mainDropdown, MF_STRING, MALX_RESTART, "Restart");
 
-    AppendMenu(WindowMenu, MF_POPUP, (UINT_PTR)mainDropdown, "RVX-4");
+    AppendMenu(WindowMenu, MF_POPUP, (UINT_PTR)mainDropdown, "File");
 
     HMENU aboutDropdown = CreatePopupMenu();
     AppendMenu(aboutDropdown, MF_STRING, MALX_CREDITS, "Credits");
-    AppendMenu(aboutDropdown, MF_STRING, MALX_COMMANDS, "Commands");
 
     AppendMenu(WindowMenu, MF_POPUP, (UINT_PTR)aboutDropdown, "Options");
 
@@ -268,7 +213,7 @@ BOOL InitiateWindow()
 
     char alxName[50];
 
-    _snprintf_s(alxName, 50, "RVX-4");
+    _snprintf_s(alxName, 50, "");
 
     // ParentWindow = FindWindow(NULL, "ROBLOX");
     if (!CreateWindowMenu())
@@ -282,7 +227,7 @@ BOOL InitiateWindow()
         50,
         50,
         600,
-        600,
+        350,
         NULL, // ParentWindow,
         WindowMenu,
         HInstance,
@@ -380,10 +325,10 @@ int ScriptContextVftable;
 int ScriptContext;
 
 //  Original function pointer (trampoline)
-typedef uintptr_t(__stdcall* MyFunctionType)(Registers* reg, uintptr_t, uintptr_t);
+typedef uintptr_t(__fastcall* MyFunctionType)(uintptr_t* rcx, uintptr_t, uintptr_t);
 MyFunctionType originalFunction = nullptr;
 
-// Helper function to convert wide character string (wchar_t*) to a standard std::string
+// Function to convert a wide string (UTF-16) to a narrow string (UTF-8)
 std::string ws2s(const std::wstring& wstr)
 {
     using convert_typeX = std::codecvt_utf8<wchar_t>;
@@ -392,47 +337,61 @@ std::string ws2s(const std::wstring& wstr)
     return converterX.to_bytes(wstr);
 }
 
+void hexPrint(uintptr_t* val, int additionalInt)
+{
+    std::stringstream s;
+    s << "registers: " << std::hex << std::uppercase << val
+        << " | index: " << additionalInt << "\r\n";
+    Print(txtbox, s.str());
+    const wchar_t* wstr = reinterpret_cast<const wchar_t*>(*(reinterpret_cast<uintptr_t*>(val) + 1));
+    try {
+        Print(txtbox, ws2s(wstr).c_str());
+    }
+    catch (...) {
+    }
+}
+
 // Detour function, ensure this matches the x64 calling convention
-extern "C" __declspec(dllexport) uintptr_t __stdcall MyDetourFunction(Registers* reg, uintptr_t a1, uintptr_t a2)
+extern "C" __declspec(dllexport) uintptr_t __fastcall MyDetourFunction(uintptr_t* rcx, uintptr_t, uintptr_t)
 {
     // uintptr_t result = originalFunction(reg, a1, a2);
 
     // Return the original result or modify as needed
     // Safeguard against null pointer access
-    if (!reg || reg->rcx == 0) {
+    if (!rcx || rcx == 0) {
         Print(txtbox, "Error: Invalid register or RCX is null");
         return 1;  // You can decide on the appropriate return for this case
     }
 
-    // Access the wide string (wchar_t*) from memory (based on how Rust handles RCX + 8)
-    wchar_t* wstr = reinterpret_cast<wchar_t*>(*((uintptr_t*)(reg->rcx + 8)));
+    const wchar_t* wstr = reinterpret_cast<const wchar_t*>(*(reinterpret_cast<uintptr_t*>(rcx) + 1));
 
+    // Access the wide string (wchar_t*) from memory (based on how Rust handles RCX + 8)
+    
     // Convert the wide string (wchar_t*) to a standard string
-    std::string pak_name = ws2s(wstr);
+    /*ws2s(wstr)*/
+    std::string pak_name = "Trying to verify pak " + ws2s(wstr) + "\r\n";
 
     // Print the string (equivalent to the Rust println! macro)
     //std::cout << "Trying to verify pak: " << pak_name << ", returning true" << std::endl;
-    Print(txtbox, "Trying to verify pak " + pak_name + "\r\n");
+    Print(txtbox, pak_name.c_str(), 0);
 
     // Return 1 (as the Rust function does)
     return 1;
 }
 
-//DWORD getaddy(int address)
-//{
-//    // return (address - 0x400000 + base);
-//    return base + address;
-//}
+size_t base = reinterpret_cast<size_t>(GetModuleHandle("Client-Win64-Shipping.exe"));
+size_t getAddress(int address)
+{
+    return base + address;
+}
 
 void InitHook()
 {
-    size_t base = reinterpret_cast<size_t>(GetModuleHandle("Client-Win64-Shipping.exe"));
-    std::stringstream ss;
+    /*std::stringstream ss;
     ss << "Base: " << std::hex << std::uppercase << base << "\r\n";
-    Print(txtbox, ss.str());
+    Print(txtbox, ss.str());*/
 
-
-    size_t SigCheck = base + (size_t)0x3D2F460;
+    size_t SigCheck = getAddress(0x3D2F460);
 
     // Validate the address
     if (SigCheck == 0) {
@@ -440,7 +399,7 @@ void InitHook()
         return;
     }
 
-    // wait for anticheat to load
+    // Wait for anticheat to load
     int value = *reinterpret_cast<int*>(SigCheck);
     while (*reinterpret_cast<int*>(SigCheck) == value) {
         Sleep(10);
@@ -448,7 +407,7 @@ void InitHook()
 
     // Use a stringstream to format the address as hex with uppercase letters
     std::stringstream s2;
-    s2 << "Got siggy: " << std::hex << std::uppercase << SigCheck << "\r\n";
+    s2 << "Sigcheck: " << std::hex << std::uppercase << SigCheck << "\r\n";
     Print(txtbox, s2.str());
 
     // Disable write protection on the process to insert the detour
@@ -500,14 +459,10 @@ void RemoveHook()
 
 void init()
 {
-    mthread = CreateThread(0, 0, (LPTHREAD_START_ROUTINE)InitHook, 0, 0, 0);
+    CreateThread(0, 0, (LPTHREAD_START_ROUTINE)InitHook, 0, 0, 0);
     Print(txtbox, "Hook successfully installed! \r\n");
-    Print(txtbox, "Done \r\n");
 
     // MessageBox(0, "Working on scriptexe /n updated to gui /n added new commands", "Update logs", MB_OK);
-
-    Print(txtbox, "No updates found \r\n");
-    Print(txtbox, "Welcome to rvx4 \r\n");
 
     // Initialize the MinHook library
 
@@ -568,7 +523,7 @@ BOOL WINAPI DllMain(HINSTANCE hinstDLL, DWORD ul_reason_for_call, LPVOID lpvRese
         break;
     case DLL_PROCESS_DETACH:
         // Remove the hook when the DLL is unloaded
-        // RemoveHook();
+        RemoveHook();
         break;
     }
     return 1;
