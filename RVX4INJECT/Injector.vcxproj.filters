@@ -24,4 +24,19 @@
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
+  <ItemGroup>
+    <None Include="Resources\GH Injector - x64.dll">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="Resources\GH Injector - x86.dll">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="Resources\GH Injector SM - x64.exe">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="Resources\GH Injector SM - x86.exe">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="packages.config" />
+  </ItemGroup>
 </Project>

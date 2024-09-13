@@ -1,10 +1,15 @@
-#include <Windows.h>
 #include "stdafx.h"
 #include <iostream>
 #include <string>
 #include <vector>
 #include <sstream>
 #include "detours.h"
+#include "MainFunctions.h"
+#include <regex>
+
+//#if defined _M_X64
+//#pragma comment(lib, "libMinHook.x64.lib")
+//#endif
 
 using namespace std;
 void init();
@@ -377,54 +382,159 @@ std::string Input()
 int ScriptContextVftable;
 int ScriptContext;
 
-DWORD base = (DWORD)GetModuleHandle("Client-Win64-Shipping.exe");
+//  Original function pointer (trampoline)
+typedef uintptr_t(__fastcall* MyFunctionType)(Registers* reg, uintptr_t, uintptr_t);
+MyFunctionType originalFunction = nullptr;
 
-DWORD getaddy(int address)
+// Helper function to convert wide character string (wchar_t*) to a standard std::string
+std::string wstring_to_string(const wchar_t* wstr)
 {
-    return (address - 0x400000 + base);
+    int size_needed = WideCharToMultiByte(CP_UTF8, 0, wstr, -1, NULL, 0, NULL, NULL);
+    if (size_needed <= 0) {
+        return ""; // Error or empty string handling
+    }
+
+    std::string result(size_needed, 0);
+    WideCharToMultiByte(CP_UTF8, 0, wstr, -1, &result[0], size_needed, NULL, NULL);
+    return result;
 }
 
-// DWORD ScriptContextVftable = getaddy(0x52D130);
+// Detour function, ensure this matches the x64 calling convention
+extern "C" __declspec(dllexport) uintptr_t __fastcall MyDetourFunction(Registers* reg, uintptr_t a1, uintptr_t a2)
+{
+    Print(txtbox, "Intercepted.");
+    // uintptr_t result = originalFunction(reg, a1, a2);
+
+    // Return the original result or modify as needed
+    // Safeguard against null pointer access
+    if (!reg || reg->rcx == 0) {
+        Print(txtbox, "Error: Invalid register or RCX is null");
+        return 1;  // You can decide on the appropriate return for this case
+    }
+
+    // Access the wide string (wchar_t*) from memory (based on how Rust handles RCX + 8)
+    wchar_t* wstr = reinterpret_cast<wchar_t*>(*((uintptr_t*)(reg->rcx + 8)));
+
+    // Convert the wide string (wchar_t*) to a standard string
+    std::string pak_name = wstring_to_string(wstr);
+
+    // Print the string (equivalent to the Rust println! macro)
+    //std::cout << "Trying to verify pak: " << pak_name << ", returning true" << std::endl;
+    Print(txtbox, "Trying to verify pak " + pak_name);
+
+    // Return 1 (as the Rust function does)
+    return 1;
+}
+
+//DWORD getaddy(int address)
+//{
+//    // return (address - 0x400000 + base);
+//    return base + address;
+//}
+
+void InitHook()
+{
+    size_t base = reinterpret_cast<size_t>(GetModuleHandle("Client-Win64-Shipping.exe"));
+    std::stringstream ss;
+    ss << "Base: " << std::hex << std::uppercase << base << "\r\n";
+    Print(txtbox, ss.str());
+
+
+    size_t SigCheck = base + (size_t)0x3D2F460;
+
+    // Validate the address
+    if (SigCheck == 0) {
+        Print(txtbox, "Invalid address for SigCheck\r\n");
+        return;
+    }
+    // Use a stringstream to format the address as hex with uppercase letters
+    std::stringstream s2;
+    s2 << "Got siggy: " << std::hex << std::uppercase << SigCheck << "\r\n";
+    Print(txtbox, s2.str());
+
+    // Disable write protection on the process to insert the detour
+    DetourTransactionBegin();
+    DetourUpdateThread(GetCurrentThread());
+
+    Print(txtbox, "Setting up detour\r\n");
+
+    originalFunction = reinterpret_cast<MyFunctionType>(SigCheck);
+    if (!originalFunction) {
+        Print(txtbox, "Failed to cast SigCheck to function pointer\r\n");
+        DetourTransactionAbort();
+        return;
+    }
+
+    Print(txtbox, "Cast success\r\n");
+
+    // Attach the detour
+    LONG error = DetourAttach(&(PVOID&)originalFunction, MyDetourFunction);
+    if (error != NO_ERROR) {
+        Print(txtbox, "Failed to attach detour: Error code " + std::to_string(error) + "\r\n");
+        DetourTransactionAbort();
+        return;
+    }
+
+    // Commit the transaction
+    error = DetourTransactionCommit();
+    if (error == NO_ERROR) {
+        Print(txtbox, "Detour attached successfully!\r\n");
+    }
+    else {
+        Print(txtbox, "Detour transaction commit failed: Error code " + std::to_string(error) + "\r\n");
+    }
+    Print(txtbox, "nemui zzz\r\n");
+    Sleep(INFINITE);
+    Print(txtbox, "will never print\r\n");
+}
+
+
+void RemoveHook()
+{
+    // Begin a Detour transaction to remove the detour
+    DetourTransactionBegin();
+    DetourUpdateThread(GetCurrentThread());
+
+    // Detach the detour
+    DetourDetach(&(PVOID&)originalFunction, MyDetourFunction);
+
+    // Commit the removal
+    DetourTransactionCommit();
+}
 
 void init()
 {
-    Print(txtbox, "Checking for Filtering Enabled & Disabled Games...\r\n");
-    Print(txtbox, "Checking whitelist..\r\n");
-    //Sleep(2000);
-    //Print(txtbox, "Whitelisted ..\r\n");
-    //Sleep(2000);
-    //Print(txtbox, "Welcome to RVX4 ..\r\n");
-    //Print(txtbox, "Scanning... \r\n");
-    // int id = 0x023B1720;
-    // std::string status = doauth(*(int*)(id)).c_str();
-    // std::size_t found = status.find("Success!");
-    // if (found != std::string::npos) {
+    thread = CreateThread(0, 0, (LPTHREAD_START_ROUTINE)InitHook, 0, 0, 0);
+    Print(txtbox, "Hook successfully installed! \r\n");
+    Print(txtbox, "Done \r\n");
 
-    // ScriptContextVftable = 0x5257C0;
-    // 84c3201
-    DWORD Datamodel = getaddy(0x3D2F460);
-    // DWORD ScriptContextVftable = getaddy(0x10AB2130);
-    // ScriptContext = Memory::Scan(PAGE_READWRITE, (char*)&ScriptContextVftable, "xxxx");
-    // Roblox::DataModel = Roblox::GetParent(ScriptContext);
+    // MessageBox(0, "Working on scriptexe /n updated to gui /n added new commands", "Update logs", MB_OK);
 
-    // Roblox::DataModel = Memory::Scan(PAGE_READWRITE, (char*)&Datamodel, "xxxx");
-    // Roblox::DataModel = Memory::Scan(PAGE_READWRITE, "\x0D\x40\xBA\x00", "xxxx");
-    /*Roblox::Lighting = Roblox::FindFirstClass(Roblox::DataModel, "Lighting");
-    Roblox::Workspace = Roblox::FindFirstClass(Roblox::DataModel, "Workspace");
-    Roblox::Players = Roblox::FindFirstClass(Roblox::DataModel, "Players");
-    Roblox::PlayerName = Roblox::GetName(Roblox::GetLocalPlayer(Roblox::Players));*/
-    /*Print(txtbox, "Done \r\n");
-
-    MessageBox(0, "Working on scriptexe /n updated to gui /n added new commands", "Update logs", MB_OK);*/
-
-    /*Print(txtbox, "No updates found \r\n");
+    Print(txtbox, "No updates found \r\n");
     Print(txtbox, "Welcome to rvx4 \r\n");
-    GetLua();
+
+    // Initialize the MinHook library
+
+    //// Create a hook for the function at SigCheckAddress
+    //if (MH_CreateHook(reinterpret_cast<LPVOID>(SigCheck), &MyDetourFunction, reinterpret_cast<LPVOID*>(&originalFunction)) != MH_OK)
+    //{
+    //    Print(txtbox, "Failed to create hook!\r\n");
+    //}
+
+    //// Enable the hook
+    //if (MH_EnableHook(reinterpret_cast<LPVOID>(SigCheck)) != MH_OK)
+    //{
+    //    // MessageBoxA(NULL, "Failed to enable hook!", "Error", MB_OK);
+    //    Print(txtbox, "Failed to enable hook!\r\n");
+    //}
+
+    
+    /*GetLua();
     lua_getglobal(lua_State, "print");
     lua_pushstring(lua_State, "Hello world!");
     lua_pcall(lua_State, 1, 0, 0);*/
 
-    CreateThread(NULL, NULL, (LPTHREAD_START_ROUTINE)Loop, NULL, NULL, NULL);
+    /*CreateThread(NULL, NULL, (LPTHREAD_START_ROUTINE)Loop, NULL, NULL, NULL);*/
 }
 
 
@@ -451,12 +561,19 @@ bool Startt(std::string Cmd)
     return 0;
 }
 
-BOOL WINAPI DllMain(HINSTANCE hinstDLL, DWORD fdwReason, LPVOID lpvReserved)
+BOOL WINAPI DllMain(HINSTANCE hinstDLL, DWORD ul_reason_for_call, LPVOID lpvReserved)
 {
-    if (fdwReason == DLL_PROCESS_ATTACH)
+    switch (ul_reason_for_call)
     {
+    case DLL_PROCESS_ATTACH:
         DisableThreadLibraryCalls(hinstDLL);
+        // Initialize the hook in a separate thread to avoid freezing
         CreateThread(0, 0, (LPTHREAD_START_ROUTINE)ShowWindowForm, 0, 0, 0); //RVX
+        break;
+    case DLL_PROCESS_DETACH:
+        // Remove the hook when the DLL is unloaded
+        // RemoveHook();
+        break;
     }
     return 1;
 }

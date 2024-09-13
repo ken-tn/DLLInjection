@@ -264,9 +264,9 @@ inline BOOL Inject(DWORD pID, const char* DLL_NAME) {
 
 	//due to a minor bug in the current version you have to wait a bit before starting the download
 		//will be fixed in version 4.7
-	Sleep(500);
+	// Sleep(500);
 
-	StartDownload();
+	// StartDownload();
 
 	//since GetSymbolState and GetImportState only return after the downloads are finished 
 		//checking the download progress is not necessary
@@ -296,10 +296,10 @@ inline BOOL Inject(DWORD pID, const char* DLL_NAME) {
 	{
 		"",
 		pID,
-		INJECTION_MODE::IM_LdrLoadDll,
-		LAUNCH_METHOD::LM_HijackThread,
+		INJECTION_MODE::IM_LoadLibraryExW,
+		LAUNCH_METHOD::LM_NtCreateThreadEx,
 		NULL, //INJ_ERASE_HEADER
-		(DWORD)500,
+		(DWORD)0,
 		NULL,
 		NULL,
 		true
@@ -450,14 +450,14 @@ inline bool InjectDLL(const wchar_t* ProcessName)
 	// wchar_t buf[MAX_PATH] = {0};
 	char buf2[MAX_PATH] = {};
 	// GetFullPathNameW(L"RVX4.dll", MAX_PATH, buf, NULL);
-	GetFullPathNameA("RVX4.dll", MAX_PATH, buf2, NULL);
+	GetFullPathNameA("../x64/Debug/RVX4.dll", MAX_PATH, buf2, NULL);
 	printf(buf2);
 
 	// Wait for the process ID to become available
 	do
 	{
 		pID = GetTargetThreadIDFromProcName(ProcessName);
-		Sleep(250);
+		Sleep(10);
 	} while (pID == 0);
 
 	// Open the target process with required access
@@ -515,6 +515,10 @@ int main() {
 	wchar_t* ProcessName = L"Client-Win64-Shipping.exe";
 	DWORD pID = GetTargetThreadIDFromProcName(ProcessName);
 	printf("%lu\n", pID);
+	while (!pID) {
+		pID = GetTargetThreadIDFromProcName(ProcessName);
+		Sleep(10);
+	}
 	if (!pID) {
 		printf("ERROR: Failed to find WW.\n");
 		system("PAUSE");
