@@ -28,4 +28,3 @@ typedef LONG(NTAPI *NtSuspendProcess)(IN HANDLE ProcessHandle);
 typedef LONG(NTAPI *NtResumeProcess)(IN HANDLE ProcessHandle);
 
 bool InjectDLL(const wchar_t* ProcessName);
-BOOL Inject(DWORD pID, const wchar_t* DLL_NAME);
