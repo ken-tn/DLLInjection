@@ -2,32 +2,6 @@
 
 using namespace std;
 
-DWORD GetTargetThreadIDFromProcName(const wchar_t* ProcName) {
-	PROCESSENTRY32W pe;
-	HANDLE thSnapShot;
-
-	// Take a snapshot of all processes in the system
-	thSnapShot = CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0);
-	if (thSnapShot == INVALID_HANDLE_VALUE)
-		return 0;
-
-	pe.dwSize = sizeof(PROCESSENTRY32W);
-
-	// Get the first process from the snapshot
-	if (Process32FirstW(thSnapShot, &pe)) {
-		do {
-			// Compare the process name (case-insensitive)
-			if (_wcsicmp(pe.szExeFile, ProcName) == 0) {
-				CloseHandle(thSnapShot);
-				return pe.th32ProcessID;  // Return process ID if match is found
-			}
-		} while (Process32NextW(thSnapShot, &pe)); // Continue looping through the processes
-	}
-
-	CloseHandle(thSnapShot);
-	return 0;  // Return 0 if no matching process is found
-}
-
 inline BOOL Inject(DWORD pID, const char * DLL_NAME) {
 	if (!pID)
 	{
@@ -78,9 +52,6 @@ inline BOOL Inject(DWORD pID, const char * DLL_NAME) {
 
 inline bool InjectDLL(DWORD pID)
 {
-	// Get the process ID of the target process by name
-	// DWORD pID = GetTargetThreadIDFromProcName(ProcessName);
-
 	// Get the full path of the DLL (wide-character version)
 	// wchar_t buf[MAX_PATH] = {0};
 	char buf2[MAX_PATH] = {};
@@ -89,13 +60,6 @@ inline bool InjectDLL(DWORD pID)
 	GetFullPathNameA("../x64/Debug/Firm.dll", MAX_PATH, buf2, NULL);
 	debug_print("%s\n", buf2);
 #endif
-
-	// Wait for the process ID to become available
-	/*do
-	{
-		pID = GetTargetThreadIDFromProcName(ProcessName);
-		Sleep(10);
-	} while (pID == 0);*/
 
 	// Open the target process with required access
 	HANDLE processHandle = OpenProcess(PROCESS_ALL_ACCESS, FALSE, pID);

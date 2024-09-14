@@ -30,8 +30,6 @@ typedef NTSTATUS(NTAPI* _LdrLoadDll)(
 );
 
 BOOL Inject(DWORD pID, const char* DLL_NAME);
-DWORD GetTargetThreadIDFromProcName(const wchar_t* ProcName);
 typedef LONG(NTAPI *NtSuspendProcess)(IN HANDLE ProcessHandle);
 typedef LONG(NTAPI *NtResumeProcess)(IN HANDLE ProcessHandle);
-
-bool InjectDLL(const wchar_t* ProcessName);
+bool InjectDLL(DWORD pID);
