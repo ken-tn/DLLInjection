@@ -7,6 +7,13 @@
 #include <tchar.h>
 #include <wchar.h>
 
+void HideConsole();
+void ShowConsole();
+void Pause();
+
+#define debug_print(fmt, ...) \
+            do { if (_DEBUG) fprintf(stderr, fmt, __VA_ARGS__); } while (0)
+
 // Define UNICODE_STRING structure
 typedef struct _UNICODE_STRING {
     USHORT Length;

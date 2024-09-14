@@ -31,21 +31,21 @@ DWORD GetTargetThreadIDFromProcName(const wchar_t* ProcName) {
 inline BOOL Inject(DWORD pID, const char * DLL_NAME) {
 	if (!pID)
 	{
-		printf("Failed at pID.\n");
+		debug_print("Failed at pID.\n");
 		return false;
 	}
 
 	HANDLE ProcessHandle = OpenProcess(PROCESS_ALL_ACCESS, FALSE, pID);
 	if (!ProcessHandle)
 	{
-		printf("Failed at ProcessHandle.\n");
+		debug_print("Failed at ProcessHandle.\n");
 		return false;
 	}
 
 	HMODULE Kernel32 = GetModuleHandleA("kernel32.dll");
 	if (!Kernel32)
 	{
-		printf("Failed at Kernel32.\n");
+		debug_print("Failed at Kernel32.\n");
 		return false;
 	}
 	LPVOID LoadLibAddy = GetProcAddress(Kernel32, "LoadLibraryA");
@@ -53,14 +53,14 @@ inline BOOL Inject(DWORD pID, const char * DLL_NAME) {
 	if (!RemoteString)
 	{
 		DWORD error = GetLastError();
-		printf("VirtualAllocEx failed with error code: %d\n", error);
+		debug_print("VirtualAllocEx failed with error code: %d\n", error);
 		return false;
 	}
 	WriteProcessMemory(ProcessHandle, RemoteString, DLL_NAME, strlen(DLL_NAME), NULL);
 	HANDLE RemoteThread = CreateRemoteThread(ProcessHandle, 0, 0, (LPTHREAD_START_ROUTINE)LoadLibAddy, RemoteString, 0, 0);
 	if (!RemoteThread)
 	{
-		printf("Failed at RemoteThread.\n");
+		debug_print("Failed at RemoteThread.\n");
 		return false;
 	}
 	while (true)
@@ -71,7 +71,7 @@ inline BOOL Inject(DWORD pID, const char * DLL_NAME) {
 			break;
 		}
 	}
-	printf("Executed DLLMain.\n");
+	debug_print("Executed DLLMain.\n");
 	CloseHandle(ProcessHandle);
 	return true;
 }
@@ -87,7 +87,7 @@ inline bool InjectDLL(DWORD pID)
 	// GetFullPathNameW(L"Firm.dll", MAX_PATH, buf, NULL);
 #ifdef _DEBUG
 	GetFullPathNameA("../x64/Debug/Firm.dll", MAX_PATH, buf2, NULL);
-	printf("%s\n", buf2);
+	debug_print("%s\n", buf2);
 #endif
 
 	// Wait for the process ID to become available
@@ -101,7 +101,7 @@ inline bool InjectDLL(DWORD pID)
 	HANDLE processHandle = OpenProcess(PROCESS_ALL_ACCESS, FALSE, pID);
 	if (!processHandle)
 	{
-		printf("Failed to open process.\n");
+		debug_print("Failed to open process.\n");
 		return false;
 	}
 
@@ -109,7 +109,7 @@ inline bool InjectDLL(DWORD pID)
 	HMODULE ntdll = GetModuleHandleA("ntdll");
 	if (!ntdll)
 	{
-		printf("Failed at ntdll\n");
+		debug_print("Failed at ntdll\n");
 		return false;
 	}
 
@@ -118,11 +118,11 @@ inline bool InjectDLL(DWORD pID)
 
 	if (!pfnNtSuspendProcess || !pfnNtResumeProcess)
 	{
-		printf("Failed to get NtSuspendProcess or NtResumeProcess.\n");
+		debug_print("Failed to get NtSuspendProcess or NtResumeProcess.\n");
 		return false;
 	}
 
-	printf("Process found! Waiting for window to inject.\n");
+	debug_print("Process found! Waiting for window to inject.\n");
 
 	// Suspend the target process
 	// pfnNtSuspendProcess(processHandle);
@@ -136,7 +136,7 @@ inline bool InjectDLL(DWORD pID)
 		return false;
 	}
 
-	printf("DLL injected successfully.\n");
+	debug_print("DLL injected successfully.\n");
 
 	// Resume the target process after successful injection
 	// pfnNtResumeProcess(processHandle);
@@ -159,7 +159,7 @@ string GetInstallLocation(const string& programName) {
 	// Open the Uninstall registry key
 	result = RegOpenKeyExA(HKEY_LOCAL_MACHINE, uninstallPath, 0, KEY_READ, &hUninstallKey);
 	if (result != ERROR_SUCCESS) {
-		printf("Failed to open Uninstall key : %l\n", result);
+		debug_print("Failed to open Uninstall key : %lu \n", result);
 		return "";
 	}
 
@@ -171,7 +171,7 @@ string GetInstallLocation(const string& programName) {
 			break;  // No more subkeys
 		}
 		if (result != ERROR_SUCCESS) {
-			printf("Failed to enumerate subkey: %l\n", result);
+			debug_print("Failed to enumerate subkey: %lu \n", result);
 			continue;
 		}
 
@@ -235,7 +235,8 @@ BOOL StartProcess(const char* ExecutablePath)
 		&pi)              // Pointer to PROCESS_INFORMATION structure
 		)
 	{
-		printf("Process started successfully!\n");
+		HideConsole();
+		debug_print("Process started successfully!\n");
 		InjectDLL(pi.dwProcessId);
 
 		// Wait until the process exits
@@ -250,8 +251,26 @@ BOOL StartProcess(const char* ExecutablePath)
 	else
 	{
 		printf("Failed to start process.\n");
+		Pause();
+
 		return 0;
 	}
+}
+
+void HideConsole()
+{
+	::ShowWindow(::GetConsoleWindow(), SW_HIDE);
+}
+
+void ShowConsole()
+{
+	::ShowWindow(::GetConsoleWindow(), SW_SHOW);
+}
+
+void Pause()
+{
+	printf("Press enter to close.\n");
+	int x = getchar();
 }
 
 int main(int argc, char* argv[])
@@ -282,21 +301,18 @@ int main(int argc, char* argv[])
 	}
 	else
 	{
-		printf("Game executable not specified, auto detecting....\n");
+		debug_print("Game executable not specified, auto detecting....\n");
 		string InstallPath = GetInstallLocation("Wuthering Waves");
 		if (InstallPath.empty())
 		{
-			printf("Failed to find gameexe.\nLaunch with command (Launcher.exe \"exepath\").\n\nPress enter to close.");
-			int x = getchar();
+			printf("Failed to find game executable.\nLaunch with command (Launcher.exe \"exepath\").\n");
+			Pause();
+			
 			return 0;
 		}
 		gameExecutable = InstallPath + "\\Client\\Binaries\\Win64\\Client-Win64-Shipping.exe";
-		printf(gameExecutable.c_str());
 	}
 
-#ifdef _RELEASE
-	#pragma comment(linker, "/SUBSYSTEM:windows /ENTRY:mainCRTStartup")
-#endif
 	SetConsoleTitle("Launcher");
 	StartProcess(gameExecutable.c_str());
 	
