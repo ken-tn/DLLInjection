@@ -77,33 +77,16 @@ inline bool InjectDLL(DWORD pID)
 		return false;
 	}
 
-	NtSuspendProcess pfnNtSuspendProcess = (NtSuspendProcess)GetProcAddress(ntdll, "NtSuspendProcess");
-	NtResumeProcess pfnNtResumeProcess = (NtSuspendProcess)GetProcAddress(ntdll, "NtResumeProcess");
-
-	if (!pfnNtSuspendProcess || !pfnNtResumeProcess)
-	{
-		debug_print("Failed to get NtSuspendProcess or NtResumeProcess.\n");
-		return false;
-	}
-
 	debug_print("Process found! Waiting for window to inject.\n");
-
-	// Suspend the target process
-	// pfnNtSuspendProcess(processHandle);
 
 	// Inject the DLL using the modified Inject function
 	if (!Inject(pID, buf2)) {
-		// printf("DLL has not injected. Please try again!\n");
-		// Resume the process if injection fails
-		// pfnNtResumeProcess(processHandle);
+		debug_print("DLL has not injected. Please try again!\n");
 		CloseHandle(processHandle);
 		return false;
 	}
 
 	debug_print("DLL injected successfully.\n");
-
-	// Resume the target process after successful injection
-	// pfnNtResumeProcess(processHandle);
 
 	// Clean up
 	CloseHandle(processHandle);
@@ -244,15 +227,6 @@ int main(int argc, char* argv[])
 	gameExecutable = "G:\\WuwaBeta\\wuwa-beta-downloader\\Wuthering Waves Game\\Client\\Binaries\\Win64\\Client-Win64-Shipping.exe";
 #endif
 
-	// Iterate through the command-line arguments
-	//for (int i = 1; i < argc; ++i) {  // Start at 1 to skip the program name (argv[0])
-	//	// Check if the argument is "GameFolder"
-	//	if (std::string(argv[i]) == "gameexe" && i + 1 < argc) {
-	//		// Get the value of the argument (next element)
-	//		gameExecutable = argv[i + 1];
-	//		break;
-	//	}
-	//}
 	if (argv[1])
 	{
 		gameExecutable = argv[1];
