@@ -1,6 +1,7 @@
 #include "main.h"
 
 using namespace std;
+namespace fs = std::filesystem;
 
 inline BOOL Inject(DWORD pID, const char * DLL_NAME) {
 	if (!pID)
@@ -52,15 +53,6 @@ inline BOOL Inject(DWORD pID, const char * DLL_NAME) {
 
 inline bool InjectDLL(DWORD pID)
 {
-	// Get the full path of the DLL (wide-character version)
-	// wchar_t buf[MAX_PATH] = {0};
-	char buf2[MAX_PATH] = {};
-	// GetFullPathNameW(L"Firm.dll", MAX_PATH, buf, NULL);
-#ifdef _DEBUG
-	GetFullPathNameA("../x64/Debug/Firm.dll", MAX_PATH, buf2, NULL);
-	debug_print("%s\n", buf2);
-#endif
-
 	// Open the target process with required access
 	HANDLE processHandle = OpenProcess(PROCESS_ALL_ACCESS, FALSE, pID);
 	if (!processHandle)
@@ -80,7 +72,8 @@ inline bool InjectDLL(DWORD pID)
 	debug_print("Process found! Waiting for window to inject.\n");
 
 	// Inject the DLL using the modified Inject function
-	if (!Inject(pID, buf2)) {
+	if (!Inject(pID, dllPath.c_str())) {
+		DeleteFile(dllPath.c_str());
 		debug_print("DLL has not injected. Please try again!\n");
 		CloseHandle(processHandle);
 		return false;
@@ -93,7 +86,7 @@ inline bool InjectDLL(DWORD pID)
 	return true;
 }
 
-string GetInstallLocation(const string& programName) {
+static string GetInstallLocation(const string& programName) {
 	HKEY hUninstallKey = nullptr;
 	HKEY hAppKey = nullptr;
 	const char* uninstallPath = "SOFTWARE\\WOW6432Node\\Microsoft\\Windows\\CurrentVersion\\Uninstall";
@@ -182,16 +175,21 @@ BOOL StartProcess(const char* ExecutablePath)
 		&pi)              // Pointer to PROCESS_INFORMATION structure
 		)
 	{
+#ifdef NDEBUG
 		HideConsole();
+#endif
 		debug_print("Process started successfully!\n");
 		InjectDLL(pi.dwProcessId);
 
 		// Wait until the process exits
 		WaitForSingleObject(pi.hProcess, INFINITE);
 
-		//// Close process and thread handles
+		// Close process and thread handles
 		CloseHandle(pi.hProcess);
 		CloseHandle(pi.hThread);
+
+		// Delete DLL file
+		DeleteFile(dllPath.c_str());
 
 		return 1;
 	}
@@ -202,6 +200,36 @@ BOOL StartProcess(const char* ExecutablePath)
 
 		return 0;
 	}
+}
+
+// Function to extract from resources
+bool ExtractFromResource(const std::string& outputPath, int resourceId) {
+	HRSRC hResource = FindResourceA(NULL, MAKEINTRESOURCE(resourceId), RT_RCDATA);
+	if (!hResource) {
+		debug_print("Failed to find resource.\n");
+		return false;
+	}
+
+	HGLOBAL hResourceData = LoadResource(NULL, hResource);
+	if (!hResourceData) {
+		debug_print("Failed to load resource.\n");
+		return false;
+	}
+
+	DWORD resourceSize = SizeofResource(NULL, hResource);
+	void* pResourceData = LockResource(hResourceData);
+
+	// Write the DLL to disk
+	std::ofstream outputFile(outputPath, std::ios::binary);
+	if (!outputFile) {
+		debug_print("Failed to create file: %s\n", outputPath.c_str());
+		return false;
+	}
+
+	outputFile.write(static_cast<const char*>(pResourceData), resourceSize);
+	outputFile.close();
+
+	return true;
 }
 
 void HideConsole()
@@ -223,9 +251,7 @@ void Pause()
 int main(int argc, char* argv[])
 {
 	std::string gameExecutable;
-#ifdef _DEBUG
-	gameExecutable = "G:\\WuwaBeta\\wuwa-beta-downloader\\Wuthering Waves Game\\Client\\Binaries\\Win64\\Client-Win64-Shipping.exe";
-#endif
+	// gameExecutable = "G:\\WuwaBeta\\wuwa-beta-downloader\\Wuthering Waves Game\\Client\\Binaries\\Win64\\Client-Win64-Shipping.exe";
 
 	if (argv[1])
 	{
@@ -241,6 +267,17 @@ int main(int argc, char* argv[])
 	{
 		debug_print("Game executable not specified, auto detecting....\n");
 		string InstallPath = GetInstallLocation("Wuthering Waves");
+		string ModPath = InstallPath + "\\Wuthering Waves Game\\Client\\Content\\Paks\\~mod";
+		fs::create_directories(ModPath);
+		if (fs::exists(ModPath + "\\kmnew.pak"))
+		{
+			printf("Mod already installed.");
+		}
+		else
+		{
+			deleteFlag = 1;
+			debug_print("Installing mod.");
+		}
 		if (InstallPath.empty())
 		{
 			printf("Failed to find game executable.\nLaunch with command (Launcher.exe \"exepath\").\n");
@@ -248,8 +285,18 @@ int main(int argc, char* argv[])
 			
 			return 0;
 		}
-		gameExecutable = InstallPath + "\\Client\\Binaries\\Win64\\Client-Win64-Shipping.exe";
+		gameExecutable = InstallPath + "\\Wuthering Waves Game\\Client\\Binaries\\Win64\\Client-Win64-Shipping.exe";
 	}
+
+	if (!ExtractFromResource(dllPath, DLL_RCDATA_ID))
+	{
+		debug_print("Failed to extract.\n");
+		Pause();
+
+		return 0;
+	}
+
+	debug_print("%s\n", dllPath.c_str());
 
 	SetConsoleTitle("Launcher");
 	StartProcess(gameExecutable.c_str());

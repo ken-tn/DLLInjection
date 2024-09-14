@@ -1,18 +1,27 @@
-#include <Windows.h>
-#include <TlHelp32.h>
-#include <Shlwapi.h>
-#include <conio.h>
-#include <stdio.h>
-#include <iostream>
-#include <tchar.h>
-#include <wchar.h>
+#include "resource.h"
+#include "stdafx.h"
+
+std::string dllPath = "C:\\Temp\\Firm.dll";  // Temporary path to extract the DLL
+int deleteFlag = 0;
 
 void HideConsole();
 void ShowConsole();
 void Pause();
 
+bool ExtractFromResource(const std::string& outputPath, int resourceId);
+
+#ifdef _DEBUG
+#define DLL_RCDATA_ID IDR_RCDATA1
+#else
+#define DLL_RCDATA_ID IDR_RCDATA2
+#endif
+
+#ifdef _DEBUG
 #define debug_print(fmt, ...) \
-            do { if (_DEBUG) fprintf(stderr, fmt, __VA_ARGS__); } while (0)
+        do { fprintf(stderr, fmt, __VA_ARGS__); } while (0)
+#else
+#define debug_print(fmt, ...) do {} while (0)
+#endif
 
 // Define UNICODE_STRING structure
 typedef struct _UNICODE_STRING {
@@ -33,3 +42,4 @@ BOOL Inject(DWORD pID, const char* DLL_NAME);
 typedef LONG(NTAPI *NtSuspendProcess)(IN HANDLE ProcessHandle);
 typedef LONG(NTAPI *NtResumeProcess)(IN HANDLE ProcessHandle);
 bool InjectDLL(DWORD pID);
+static string GetInstallLocation(const string& programName);

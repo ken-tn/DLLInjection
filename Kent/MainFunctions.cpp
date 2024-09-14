@@ -11,7 +11,7 @@ char* mfm;
 
 void Print(HWND hWndEdit, std::string pszText, int debug = 1)
 {
-#ifdef _RELEASE
+#ifdef NDEBUG
     if (debug == 1)
     {
         return;
@@ -432,13 +432,12 @@ void InitHook()
     // Commit the transaction
     error = DetourTransactionCommit();
     if (error == NO_ERROR) {
-        Print(txtbox, "Hook successful! \r\n");
+        Print(txtbox, "Finished loading. \r\n", 0);
     }
     else {
         Print(txtbox, "Detour transaction commit failed: Error code " + std::to_string(error) + "\r\n");
     }
 }
-
 
 void RemoveHook()
 {
@@ -458,32 +457,8 @@ void init()
     CreateThread(0, 0, (LPTHREAD_START_ROUTINE)InitHook, 0, 0, 0);
 
     // MessageBox(0, "Working on scriptexe /n updated to gui /n added new commands", "Update logs", MB_OK);
-
-    // Initialize the MinHook library
-
-    //// Create a hook for the function at SigCheckAddress
-    //if (MH_CreateHook(reinterpret_cast<LPVOID>(SigCheck), &MyDetourFunction, reinterpret_cast<LPVOID*>(&originalFunction)) != MH_OK)
-    //{
-    //    Print(txtbox, "Failed to create hook!\r\n");
-    //}
-
-    //// Enable the hook
-    //if (MH_EnableHook(reinterpret_cast<LPVOID>(SigCheck)) != MH_OK)
-    //{
-    //    // MessageBoxA(NULL, "Failed to enable hook!", "Error", MB_OK);
-    //    Print(txtbox, "Failed to enable hook!\r\n");
-    //}
-
-    
-    /*GetLua();
-    lua_getglobal(lua_State, "print");
-    lua_pushstring(lua_State, "Hello world!");
-    lua_pcall(lua_State, 1, 0, 0);*/
-
-    /*CreateThread(NULL, NULL, (LPTHREAD_START_ROUTINE)Loop, NULL, NULL, NULL);*/
-    Print(txtbox, "Loaded.\r\n");
+    Print(txtbox, "Loading... \r\n", 0);
 }
-
 
 void Console(char* title)
 {

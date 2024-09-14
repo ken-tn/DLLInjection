@@ -18,6 +18,15 @@
     <ClInclude Include="main.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="resource.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="stdafx.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="targetver.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
@@ -25,18 +34,18 @@
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <None Include="Resources\GH Injector - x64.dll">
-      <Filter>Resource Files</Filter>
-    </None>
-    <None Include="Resources\GH Injector - x86.dll">
-      <Filter>Resource Files</Filter>
-    </None>
-    <None Include="Resources\GH Injector SM - x64.exe">
-      <Filter>Resource Files</Filter>
-    </None>
-    <None Include="Resources\GH Injector SM - x86.exe">
-      <Filter>Resource Files</Filter>
-    </None>
     <None Include="packages.config" />
+    <None Include="..\x64\Debug\Firm.dll" />
+    <None Include="..\x64\Release\Firm.dll" />
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="Injector.rc">
+      <Filter>Resource Files</Filter>
+    </ResourceCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <Image Include="F:\Users\kent9\Downloads\Shorekeeper.ico">
+      <Filter>Resource Files</Filter>
+    </Image>
   </ItemGroup>
 </Project>
