@@ -1,19 +1,26 @@
-#include "resource.h"
 #include "stdafx.h"
+#include "resource.h"
 
-std::string dllPath = "C:\\Temp\\Firm.dll";  // Temporary path to extract the DLL
-int deleteFlag = 0;
+using std::string;
+namespace fs = std::filesystem;
 
+string dllPath = fs::temp_directory_path().generic_string() + "\\Firm.dll";  // Temporary path to extract the DLL
+string modPath = "";
+string kunModPath = "";  // Temporary path to extract the DLL
+BOOL deleteModFlag = 0;
+BOOL doInjectionFlag = 1;
+
+void CleanUp();
 void HideConsole();
 void ShowConsole();
 void Pause();
 
-bool ExtractFromResource(const std::string& outputPath, int resourceId);
+static bool ExtractFromResource(const string& outputPath, DWORD resourceId);
 
 #ifdef _DEBUG
-#define DLL_RCDATA_ID IDR_RCDATA1
+#define DLL_RCDATA_ID DEBUGDLL
 #else
-#define DLL_RCDATA_ID IDR_RCDATA2
+#define DLL_RCDATA_ID RELEASEDLL
 #endif
 
 #ifdef _DEBUG

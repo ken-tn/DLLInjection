@@ -1,8 +1,5 @@
 #include "main.h"
 
-using namespace std;
-namespace fs = std::filesystem;
-
 inline BOOL Inject(DWORD pID, const char * DLL_NAME) {
 	if (!pID)
 	{
@@ -152,6 +149,20 @@ static string GetInstallLocation(const string& programName) {
 	return "";  // Program not found
 }
 
+void CleanUp()
+{
+	// Delete DLL file
+	fs::remove(dllPath.c_str());
+
+	// Delete
+	if (deleteModFlag)
+	{
+		fs::remove(kunModPath.c_str());
+		// Try to delete the ~mod folder, won't delete if files inside
+		fs::remove(modPath);
+	}
+}
+
 BOOL StartProcess(const char* ExecutablePath)
 {
 	// Initialize the STARTUPINFO and PROCESS_INFORMATION structures
@@ -179,7 +190,11 @@ BOOL StartProcess(const char* ExecutablePath)
 		HideConsole();
 #endif
 		debug_print("Process started successfully!\n");
-		InjectDLL(pi.dwProcessId);
+		if (doInjectionFlag)
+		{
+			debug_print("Injecting...\n");
+			InjectDLL(pi.dwProcessId);
+		}
 
 		// Wait until the process exits
 		WaitForSingleObject(pi.hProcess, INFINITE);
@@ -188,8 +203,7 @@ BOOL StartProcess(const char* ExecutablePath)
 		CloseHandle(pi.hProcess);
 		CloseHandle(pi.hThread);
 
-		// Delete DLL file
-		DeleteFile(dllPath.c_str());
+		CleanUp();
 
 		return 1;
 	}
@@ -203,7 +217,7 @@ BOOL StartProcess(const char* ExecutablePath)
 }
 
 // Function to extract from resources
-bool ExtractFromResource(const std::string& outputPath, int resourceId) {
+static bool ExtractFromResource(const std::string& outputPath, DWORD resourceId) {
 	HRSRC hResource = FindResourceA(NULL, MAKEINTRESOURCE(resourceId), RT_RCDATA);
 	if (!hResource) {
 		debug_print("Failed to find resource.\n");
@@ -248,16 +262,51 @@ void Pause()
 	int x = getchar();
 }
 
+BOOL ExtractMod(string InstallPath)
+{
+	modPath = InstallPath + "\\Wuthering Waves Game\\Client\\Content\\Paks\\~mod";
+	kunModPath = modPath + "\\kmnew.pak";
+	if (!fs::exists(modPath))
+	{
+		fs::create_directories(modPath);
+	}
+	if (fs::exists(kunModPath))
+	{
+		printf("Mod already installed.");
+	}
+	else
+	{
+		deleteModFlag = 1;
+		if (!ExtractFromResource(kunModPath, KUNMOD))
+		{
+			debug_print("Failed to extract mod.\n");
+
+			return 0;
+		}
+		debug_print("Mod installed at %s.\n", kunModPath.c_str());
+	}
+	
+
+	return 1;
+}
+
 int main(int argc, char* argv[])
 {
-	std::string gameExecutable;
-	// gameExecutable = "G:\\WuwaBeta\\wuwa-beta-downloader\\Wuthering Waves Game\\Client\\Binaries\\Win64\\Client-Win64-Shipping.exe";
+	string gameExecutable;
+	gameExecutable = "G:\\WuwaBeta\\wuwa-beta-downloader\\Wuthering Waves Game\\Client\\Binaries\\Win64\\Client-Win64-Shipping.exe";
 
+	debug_print("argsc: %lu\n", argc);
 	if (argv[1])
 	{
 		gameExecutable = argv[1];
 	}
+	if (argc > 2)
+	{
+		debug_print("Debug injection flagged.\n");
+		doInjectionFlag = 0;
+	}
 
+	string InstallPath = GetInstallLocation("Wuthering Waves");
 	// Check game exe was specified
 	if (!gameExecutable.empty())
 	{
@@ -266,27 +315,20 @@ int main(int argc, char* argv[])
 	else
 	{
 		debug_print("Game executable not specified, auto detecting....\n");
-		string InstallPath = GetInstallLocation("Wuthering Waves");
-		string ModPath = InstallPath + "\\Wuthering Waves Game\\Client\\Content\\Paks\\~mod";
-		fs::create_directories(ModPath);
-		if (fs::exists(ModPath + "\\kmnew.pak"))
-		{
-			printf("Mod already installed.");
-		}
-		else
-		{
-			deleteFlag = 1;
-			debug_print("Installing mod.");
-		}
 		if (InstallPath.empty())
 		{
 			printf("Failed to find game executable.\nLaunch with command (Launcher.exe \"exepath\").\n");
-			Pause();
-			
+
 			return 0;
 		}
 		gameExecutable = InstallPath + "\\Wuthering Waves Game\\Client\\Binaries\\Win64\\Client-Win64-Shipping.exe";
 	}
+
+#ifdef _DEBUG
+	ExtractMod("G:\\WuwaBeta\\wuwa-beta-downloader");
+#else
+	ExtractMod(InstallPath);
+#endif
 
 	if (!ExtractFromResource(dllPath, DLL_RCDATA_ID))
 	{
