@@ -225,7 +225,7 @@ void CloseDelayed()
     SendMessage(hWnd, WM_SETICON, ICON_SMALL, (LPARAM)hIcon);
     SendMessage(hWnd, WM_SETICON, ICON_BIG, (LPARAM)hIcon);
     UpdateWindow(hWnd);*/
-    Print(txtbox, "Closing window in 10 seconds...\n");
+    Print(txtbox, "Closing window in 10 seconds...\n", 0);
     Sleep(10000);
     PostMessage(MainWindow, WM_CLOSE, 0, 0);
 }
@@ -263,7 +263,7 @@ BOOL InitiateWindow()
     // EnableScrollBar(MainWindow, SB_VERT, ESB_ENABLE_BOTH);
 
     CreateSubwindows();
-    Print(txtbox, "Loading...\r\n");
+    Print(txtbox, "Loading...\r\n", 0);
 
     ShowWindow(MainWindow, SW_NORMAL);
 
