@@ -87,7 +87,7 @@ inline bool InjectDLL(DWORD pID)
 	// GetFullPathNameW(L"Firm.dll", MAX_PATH, buf, NULL);
 #ifdef _DEBUG
 	GetFullPathNameA("../x64/Debug/Firm.dll", MAX_PATH, buf2, NULL);
-	printf(buf2);
+	printf("%s\n", buf2);
 #endif
 
 	// Wait for the process ID to become available
@@ -146,6 +146,72 @@ inline bool InjectDLL(DWORD pID)
 	return true;
 }
 
+string GetInstallLocation(const string& programName) {
+	HKEY hUninstallKey = nullptr;
+	HKEY hAppKey = nullptr;
+	const char* uninstallPath = "SOFTWARE\\WOW6432Node\\Microsoft\\Windows\\CurrentVersion\\Uninstall";
+	char subKeyName[256];
+	char displayName[256];
+	char installLocation[1024];
+	DWORD subKeyNameSize, displayNameSize, installLocationSize;
+	LONG result;
+
+	// Open the Uninstall registry key
+	result = RegOpenKeyExA(HKEY_LOCAL_MACHINE, uninstallPath, 0, KEY_READ, &hUninstallKey);
+	if (result != ERROR_SUCCESS) {
+		printf("Failed to open Uninstall key : %l\n", result);
+		return "";
+	}
+
+	// Iterate through the subkeys of the Uninstall key
+	for (DWORD i = 0;; ++i) {
+		subKeyNameSize = sizeof(subKeyName);
+		result = RegEnumKeyExA(hUninstallKey, i, subKeyName, &subKeyNameSize, nullptr, nullptr, nullptr, nullptr);
+		if (result == ERROR_NO_MORE_ITEMS) {
+			break;  // No more subkeys
+		}
+		if (result != ERROR_SUCCESS) {
+			printf("Failed to enumerate subkey: %l\n", result);
+			continue;
+		}
+
+		// Open the subkey for each application
+		result = RegOpenKeyExA(hUninstallKey, subKeyName, 0, KEY_READ, &hAppKey);
+		if (result != ERROR_SUCCESS) {
+			continue;  // Could not open subkey
+		}
+
+		// Query the DisplayName value to see if it matches the program name
+		displayNameSize = sizeof(displayName);
+		result = RegQueryValueExA(hAppKey, "DisplayName", nullptr, nullptr, (LPBYTE)displayName, &displayNameSize);
+		if (result == ERROR_SUCCESS && programName == displayName) {
+			// Query the InstallLocation value
+			installLocationSize = sizeof(installLocation);
+			result = RegQueryValueExA(hAppKey, "InstallPath", nullptr, nullptr, (LPBYTE)installLocation, &installLocationSize);
+			if (result == ERROR_SUCCESS) {
+				RegCloseKey(hAppKey);
+				RegCloseKey(hUninstallKey);
+				return std::string(installLocation);  // Return install location
+			}
+			else
+			{
+				//fallback
+				result = RegQueryValueExA(hAppKey, "InstallLocation", nullptr, nullptr, (LPBYTE)installLocation, &installLocationSize);
+				if (result == ERROR_SUCCESS) {
+					RegCloseKey(hAppKey);
+					RegCloseKey(hUninstallKey);
+					return std::string(installLocation);  // Return install location
+				}
+			}
+		}
+
+		RegCloseKey(hAppKey);  // Close the current app key
+	}
+
+	RegCloseKey(hUninstallKey);  // Close the uninstall key
+	return "";  // Program not found
+}
+
 BOOL StartProcess(const char* ExecutablePath)
 {
 	// Initialize the STARTUPINFO and PROCESS_INFORMATION structures
@@ -169,7 +235,7 @@ BOOL StartProcess(const char* ExecutablePath)
 		&pi)              // Pointer to PROCESS_INFORMATION structure
 		)
 	{
-		printf("Process started successfully!");
+		printf("Process started successfully!\n");
 		InjectDLL(pi.dwProcessId);
 
 		// Wait until the process exits
@@ -183,20 +249,56 @@ BOOL StartProcess(const char* ExecutablePath)
 	}
 	else
 	{
-		printf("Failed to start process.");
+		printf("Failed to start process.\n");
 		return 0;
 	}
 }
 
-int main() {
+int main(int argc, char* argv[])
+{
+	std::string gameExecutable;
+#ifdef _DEBUG
+	gameExecutable = "G:\\WuwaBeta\\wuwa-beta-downloader\\Wuthering Waves Game\\Client\\Binaries\\Win64\\Client-Win64-Shipping.exe";
+#endif
+
+	// Iterate through the command-line arguments
+	//for (int i = 1; i < argc; ++i) {  // Start at 1 to skip the program name (argv[0])
+	//	// Check if the argument is "GameFolder"
+	//	if (std::string(argv[i]) == "gameexe" && i + 1 < argc) {
+	//		// Get the value of the argument (next element)
+	//		gameExecutable = argv[i + 1];
+	//		break;
+	//	}
+	//}
+	if (argv[1])
+	{
+		gameExecutable = argv[1];
+	}
+
+	// Check game exe was specified
+	if (!gameExecutable.empty())
+	{
+		printf("Game executable specified: %s\n", gameExecutable.c_str());
+	}
+	else
+	{
+		printf("Game executable not specified, auto detecting....\n");
+		string InstallPath = GetInstallLocation("Wuthering Waves");
+		if (InstallPath.empty())
+		{
+			printf("Failed to find gameexe.\nLaunch with command (Launcher.exe \"exepath\").\n\nPress enter to close.");
+			int x = getchar();
+			return 0;
+		}
+		gameExecutable = InstallPath + "\\Client\\Binaries\\Win64\\Client-Win64-Shipping.exe";
+		printf(gameExecutable.c_str());
+	}
+
 #ifdef _RELEASE
 	#pragma comment(linker, "/SUBSYSTEM:windows /ENTRY:mainCRTStartup")
 #endif
 	SetConsoleTitle("Launcher");
-	// Path to the executable you want to run
-	const char* exePath = "G:\\WuwaBeta\\wuwa-beta-downloader\\Wuthering Waves Game\\Client\\Binaries\\Win64\\Client-Win64-Shipping.exe";
-	
-	StartProcess(exePath);
+	StartProcess(gameExecutable.c_str());
 	
 	return 1;
 }
