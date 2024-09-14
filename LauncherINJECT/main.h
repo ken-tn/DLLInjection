@@ -4,7 +4,8 @@
 using std::string;
 namespace fs = std::filesystem;
 
-string dllPath = fs::temp_directory_path().generic_string() + "\\Firm.dll";  // Temporary path to extract the DLL
+string dllPath = fs::temp_directory_path().generic_string() + "Firm.dll";  // Temporary path to extract the DLL
+string icoPath = fs::temp_directory_path().generic_string() + "shorekeeper.ico";  // Temporary path to extract the icon
 string modPath = "";
 string kunModPath = "";  // Temporary path to extract the DLL
 BOOL deleteModFlag = 0;

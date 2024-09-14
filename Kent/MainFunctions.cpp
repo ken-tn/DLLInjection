@@ -37,7 +37,7 @@ void Print(HWND hWndEdit, std::string pszText, int debug = 1)
 HWND ParentWindow = NULL;
 HWND MainWindow = NULL;
 HMENU WindowMenu = NULL;
-HMODULE HInstance = NULL;
+HINSTANCE HInstance = NULL;
 
 HWND InputField = NULL;
 HWND txtbox = NULL;
@@ -58,18 +58,17 @@ LRESULT CALLBACK DLLWindowProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lP
         switch (LOWORD(wParam))
         {
         case MALX_EXIT:
-            if (MessageBox(hwnd, "Are you sure you want to exit?", "Exit", MB_YESNOCANCEL) == IDYES)
-                ExitThread(0);
+            if (MessageBox(hwnd, "Are you sure you want to exit?", "Exit", MB_YESNO) == IDYES)
+                terminate();
+                // ExitThread(0);
             break;
         case MALX_RESTART:
-            if (MessageBox(hwnd, "Are you sure you want to restart?", "Restart", MB_YESNOCANCEL) == IDYES)
-                ExitThread(1);
+            if (MessageBox(hwnd, "Are you sure you want to restart?", "Restart", MB_YESNO) == IDYES)
+                // ExitThread(1);
             break;
-
         case MALX_CREDITS:
-            MessageBox(hwnd, "- kent911t", "Credits", MB_OKCANCEL);
+            MessageBox(hwnd, "- kent911t", "Credits", MB_OK);
             break;
-
         case MALX_COMMANDS:
             Startt("cmds");
             break;
@@ -113,9 +112,9 @@ BOOL RegisterWindowClass(const char* wClassName)
     nClass.lpfnWndProc = DLLWindowProc;
     nClass.cbClsExtra = 0;
     nClass.cbWndExtra = 0;
-    nClass.hInstance = GetModuleHandle(NULL);
-    nClass.hIcon = LoadIcon(NULL, IDI_APPLICATION); // TODO: make an icon for alx?
-    nClass.hIconSm = LoadIcon(NULL, IDI_APPLICATION);
+    nClass.hInstance = GetModuleHandleA(NULL);
+    nClass.hIcon = LoadIcon(DllInstance, MAKEINTRESOURCE(IDI_ICON1)); // TODO: make an icon for alx?
+    nClass.hIconSm = LoadIcon(DllInstance, MAKEINTRESOURCE(IDI_ICON1));
     nClass.hCursor = LoadCursor(NULL, IDC_ARROW);
     nClass.hbrBackground = (HBRUSH)GetStockObject(WHITE_BRUSH);
     nClass.lpszMenuName = "what";
@@ -149,8 +148,6 @@ BOOL CreateSubwindows()
     SendMessage(txtbox, WM_SETFONT, (WPARAM)textFont, MAKELPARAM(TRUE, 0));
     // SendMessage(InputField, WM_SETFONT, (WPARAM)textFont, MAKELPARAM(TRUE, 0));
 
-    UpdateWindow(MainWindow);
-
     return 1;
 }
 
@@ -173,52 +170,84 @@ BOOL CreateWindowMenu()
     return 1;
 }
 
-BOOL StartMessageLoop()
-{
-    MSG msg;
-    BOOL bRet;
+// Structure to hold the target substring and the result HWND
+struct FindWindowData {
+    std::string partTitle;
+    HWND hWnd;
+};
 
-    while ((bRet = GetMessage(&msg, NULL, 0, 0)) != 0)
-    {
-        if (bRet == 0)
-        {
-            return 0;
-        }
-        else if (bRet == -1)
-        {
-            // handle the error and possibly exit
-            // return msg.wParam;
-            return 0;
-        }
-        else
-        {
-            TranslateMessage(&msg);
-            DispatchMessage(&msg);
+// Callback function for EnumWindows
+BOOL CALLBACK EnumWindowsProc(HWND hwnd, LPARAM lParam) {
+    // Buffer to hold the window title
+    char windowTitle[256];
+
+    // Get the window title
+    if (GetWindowTextA(hwnd, windowTitle, sizeof(windowTitle)) > 0) {
+        // Convert the window title to std::string for easier manipulation
+        std::string title(windowTitle);
+
+        // Get the FindWindowData structure
+        FindWindowData* data = reinterpret_cast<FindWindowData*>(lParam);
+
+        // Check if the window title contains the target substring
+        if (title.find(data->partTitle) != std::string::npos) {
+            std::cout << "Window found: " << title << std::endl;
+
+            // Store the found window handle in the structure
+            data->hWnd = hwnd;
+
+            // Stop enumeration by returning FALSE
+            return FALSE;
         }
     }
 
-    return 0;
+    // Continue enumerating windows
+    return TRUE;
+}
+
+HWND FindWindowByPartialTitle(const std::string& partTitle) {
+    FindWindowData data = { partTitle, NULL };
+
+    // Enumerate all top-level windows and pass the FindWindowData structure
+    EnumWindows(EnumWindowsProc, reinterpret_cast<LPARAM>(&data));
+
+    // Return the found HWND (or NULL if not found)
+    return data.hWnd;
+}
+
+void CloseDelayed()
+{
+    /*HWND hWnd = FindWindowByPartialTitle("Wave");
+    while (!hWnd)
+    {
+        hWnd = FindWindowByPartialTitle("Wave");
+    }
+    SendMessage(hWnd, WM_SETICON, ICON_SMALL, (LPARAM)hIcon);
+    SendMessage(hWnd, WM_SETICON, ICON_BIG, (LPARAM)hIcon);
+    UpdateWindow(hWnd);*/
+    Print(txtbox, "Closing window in 10 seconds...\n");
+    Sleep(10000);
+    PostMessage(MainWindow, WM_CLOSE, 0, 0);
 }
 
 BOOL InitiateWindow()
 {
-    HInstance = GetModuleHandle(NULL);
+    HInstance = GetModuleHandleA(NULL);
+    UnregisterClass("FR_WINDOW", HInstance);
+    RegisterWindowClass("FR_WINDOW");
 
-    UnregisterClass("ALX_WINDOW", HInstance);
-    RegisterWindowClass("ALX_WINDOW");
+    char windowName[50];
 
-    char alxName[50];
-
-    _snprintf_s(alxName, 50, "");
+    _snprintf_s(windowName, 50, "Launcher v1.3");
 
     // ParentWindow = FindWindow(NULL, "ROBLOX");
     if (!CreateWindowMenu())
         return 0;
 
-    if (!(MainWindow = CreateWindowEx(
+    if (!(MainWindow = CreateWindowExA(
         NULL,
-        "ALX_WINDOW",
-        alxName,
+        "FR_WINDOW",
+        windowName,
         WS_SYSMENU | WS_MINIMIZEBOX,
         50,
         50,
@@ -234,16 +263,17 @@ BOOL InitiateWindow()
     // EnableScrollBar(MainWindow, SB_VERT, ESB_ENABLE_BOTH);
 
     CreateSubwindows();
-    UpdateWindow(MainWindow);
+    Print(txtbox, "Loading...\r\n");
 
-    ShowWindow(MainWindow, SW_SHOWNORMAL);
-    init();
+    ShowWindow(MainWindow, SW_NORMAL);
 
-    return StartMessageLoop();
-}
+    MSG msg = {};
+    while (GetMessage(&msg, NULL, 0, 0)) {
+        TranslateMessage(&msg);
+        DispatchMessage(&msg);
+    }
 
-void ShowWindowForm() {
-    InitiateWindow();
+    return 0;
 }
 
 namespace Memory
@@ -316,9 +346,6 @@ std::string Input()
     getline(std::cin, wotthefuck);
     return wotthefuck;
 }
-
-int ScriptContextVftable;
-int ScriptContext;
 
 //  Original function pointer (trampoline)
 typedef uintptr_t(__fastcall* MyFunctionType)(uintptr_t* rcx, uintptr_t, uintptr_t);
@@ -433,6 +460,8 @@ void InitHook()
     error = DetourTransactionCommit();
     if (error == NO_ERROR) {
         Print(txtbox, "Finished loading. \r\n", 0);
+        std::thread t(CloseDelayed);
+        t.detach();
     }
     else {
         Print(txtbox, "Detour transaction commit failed: Error code " + std::to_string(error) + "\r\n");
@@ -454,10 +483,9 @@ void RemoveHook()
 
 void init()
 {
-    CreateThread(0, 0, (LPTHREAD_START_ROUTINE)InitHook, 0, 0, 0);
-
-    // MessageBox(0, "Working on scriptexe /n updated to gui /n added new commands", "Update logs", MB_OK);
-    Print(txtbox, "Loading... \r\n", 0);
+    std::thread t(InitiateWindow);
+    t.detach();
+    InitHook();
 }
 
 void Console(char* title)
@@ -489,8 +517,9 @@ BOOL WINAPI DllMain(HINSTANCE hinstDLL, DWORD ul_reason_for_call, LPVOID lpvRese
     {
     case DLL_PROCESS_ATTACH:
         DisableThreadLibraryCalls(hinstDLL);
+        DllInstance = hinstDLL;
         // Initialize the hook in a separate thread to avoid freezing
-        CreateThread(0, 0, (LPTHREAD_START_ROUTINE)ShowWindowForm, 0, 0, 0);
+        CreateThread(0, 0, (LPTHREAD_START_ROUTINE)init, 0, 0, 0);
         break;
     case DLL_PROCESS_DETACH:
         // Remove the hook when the DLL is unloaded

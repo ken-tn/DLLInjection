@@ -217,8 +217,8 @@ BOOL StartProcess(const char* ExecutablePath)
 }
 
 // Function to extract from resources
-static bool ExtractFromResource(const std::string& outputPath, DWORD resourceId) {
-	HRSRC hResource = FindResourceA(NULL, MAKEINTRESOURCE(resourceId), RT_RCDATA);
+static bool ExtractFromResource(const std::string& outputPath, DWORD resourceId, LPCSTR lpType) {
+	HRSRC hResource = FindResourceA(NULL, MAKEINTRESOURCE(resourceId), lpType);
 	if (!hResource) {
 		debug_print("Failed to find resource.\n");
 		return false;
@@ -277,7 +277,7 @@ BOOL ExtractMod(string InstallPath)
 	else
 	{
 		deleteModFlag = 1;
-		if (!ExtractFromResource(kunModPath, KUNMOD))
+		if (!ExtractFromResource(kunModPath, KUNMOD, RT_RCDATA))
 		{
 			debug_print("Failed to extract mod.\n");
 
@@ -330,7 +330,7 @@ int main(int argc, char* argv[])
 	ExtractMod(InstallPath);
 #endif
 
-	if (!ExtractFromResource(dllPath, DLL_RCDATA_ID))
+	if (!ExtractFromResource(dllPath, DLL_RCDATA_ID, RT_RCDATA))
 	{
 		debug_print("Failed to extract.\n");
 		Pause();
