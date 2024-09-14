@@ -151,6 +151,9 @@ static string GetInstallLocation(const string& programName) {
 
 void CleanUp()
 {
+	// Wait until it's definitely terminated.
+	Sleep(2000);
+
 	// Delete DLL file
 	fs::remove(dllPath.c_str());
 
@@ -163,8 +166,10 @@ void CleanUp()
 	}
 }
 
-BOOL StartProcess(const char* ExecutablePath)
+BOOL StartProcess(const char* ExecutablePath, const char* cmdArgs)
 {
+	// Prepare the command line string
+	string commandLine = string(ExecutablePath) + " " + cmdArgs;
 	// Initialize the STARTUPINFO and PROCESS_INFORMATION structures
 	STARTUPINFOA si;
 	PROCESS_INFORMATION pi;
@@ -175,7 +180,7 @@ BOOL StartProcess(const char* ExecutablePath)
 	// Start the process
 	if (CreateProcessA(
 		ExecutablePath,          // Application name
-		NULL,             // Command line arguments (NULL if no arguments)
+		&commandLine[0],             // Command line arguments (NULL if no arguments)
 		NULL,             // Process handle not inheritable
 		NULL,             // Thread handle not inheritable
 		FALSE,            // Set handle inheritance to FALSE
@@ -264,6 +269,11 @@ void Pause()
 
 BOOL ExtractMod(string InstallPath)
 {
+	if (!fs::exists(InstallPath + "\\Wuthering Waves Game"))
+	{
+		printf("Failed to find Wuthering Waves Game at %s.\n", InstallPath.c_str());
+		return 0;
+	}
 	modPath = InstallPath + "\\Wuthering Waves Game\\Client\\Content\\Paks\\~mod";
 	kunModPath = modPath + "\\kmnew.pak";
 	if (!fs::exists(modPath))
@@ -272,7 +282,7 @@ BOOL ExtractMod(string InstallPath)
 	}
 	if (fs::exists(kunModPath))
 	{
-		printf("Mod already installed.");
+		printf("Mod already installed.\n");
 	}
 	else
 	{
@@ -290,31 +300,74 @@ BOOL ExtractMod(string InstallPath)
 	return 1;
 }
 
+std::string GetParentDirectory(const std::string& path) {
+	// Ensure the path is not empty and has a valid length
+	if (path.empty()) {
+		return "";
+	}
+
+	// Find the position of the last directory separator ('\\' or '/')
+	size_t pos = path.find_last_of("\\/");
+
+	// If a separator is found and it's not the root directory (like "C:\")
+	if (pos != std::string::npos) {
+		// If the last character is a separator, remove it first
+		if (pos == path.length() - 1) {
+			pos = path.find_last_of("\\/", pos - 1);
+		}
+		// Return the substring up to the parent directory
+		if (pos != std::string::npos) {
+			return path.substr(0, pos);
+		}
+	}
+
+	// If no parent directory is found or invalid path, return empty string
+	return "";
+}
+
 int main(int argc, char* argv[])
 {
 	string gameExecutable;
+#ifdef _DEBUG
 	gameExecutable = "G:\\WuwaBeta\\wuwa-beta-downloader\\Wuthering Waves Game\\Client\\Binaries\\Win64\\Client-Win64-Shipping.exe";
+#endif
 
 	debug_print("argsc: %lu\n", argc);
 	if (argv[1])
 	{
 		gameExecutable = argv[1];
 	}
+	string cmdArgs = "";
 	if (argc > 2)
 	{
 		debug_print("Debug injection flagged.\n");
 		doInjectionFlag = 0;
+
+		// Concatenate all arguments from argv[2] onward into a single string
+		std::ostringstream cmdArgsStream;
+		for (int i = 2; i < argc; ++i) {
+			cmdArgsStream << argv[i];
+			if (i < argc - 1) {
+				cmdArgsStream << " ";  // Add a space between arguments
+			}
+		}
+
+		// Get the final command line arguments
+		cmdArgs = cmdArgsStream.str();
 	}
 
-	string InstallPath = GetInstallLocation("Wuthering Waves");
 	// Check game exe was specified
+	string InstallPath;
 	if (!gameExecutable.empty())
 	{
 		printf("Game executable specified: %s\n", gameExecutable.c_str());
+		const std::filesystem::path path = gameExecutable;
+		InstallPath = path.parent_path().parent_path().parent_path().parent_path().parent_path().generic_string();
 	}
 	else
 	{
 		debug_print("Game executable not specified, auto detecting....\n");
+		InstallPath = GetInstallLocation("Wuthering Waves");
 		if (InstallPath.empty())
 		{
 			printf("Failed to find game executable.\nLaunch with command (Launcher.exe \"exepath\").\n");
@@ -324,11 +377,8 @@ int main(int argc, char* argv[])
 		gameExecutable = InstallPath + "\\Wuthering Waves Game\\Client\\Binaries\\Win64\\Client-Win64-Shipping.exe";
 	}
 
-#ifdef _DEBUG
-	ExtractMod("G:\\WuwaBeta\\wuwa-beta-downloader");
-#else
+	debug_print("Expected game path: %s\n", InstallPath.c_str());
 	ExtractMod(InstallPath);
-#endif
 
 	if (!ExtractFromResource(dllPath, DLL_RCDATA_ID, RT_RCDATA))
 	{
@@ -341,7 +391,8 @@ int main(int argc, char* argv[])
 	debug_print("%s\n", dllPath.c_str());
 
 	SetConsoleTitle("Launcher");
-	StartProcess(gameExecutable.c_str());
+	debug_print("Cmdargs: %s\n", cmdArgs.c_str());
+	StartProcess(gameExecutable.c_str(), cmdArgs.c_str());
 	
 	return 1;
 }
