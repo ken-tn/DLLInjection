@@ -414,7 +414,9 @@ void InitHook()
     ss << "Base: " << std::hex << std::uppercase << base << "\r\n";
     Print(txtbox, ss.str());*/
 
-    size_t SigCheck = getAddress(0x3D2F460);
+    // 40 53 56 57 41 57 48 81 EC A8000000 80 3D
+    // size_t SigCheck = getAddress(0x3D2F460); 1.3 beta
+    size_t SigCheck = getAddress(0x3CDC430); // 1.3
 
     // Validate the address
     if (SigCheck == 0) {
