@@ -128,7 +128,7 @@ static string GetInstallLocation(const string& programName) {
 			if (result == ERROR_SUCCESS) {
 				RegCloseKey(hAppKey);
 				RegCloseKey(hUninstallKey);
-				return std::string(installLocation);  // Return install location
+				return string(installLocation);  // Return install location
 			}
 			else
 			{
@@ -137,7 +137,7 @@ static string GetInstallLocation(const string& programName) {
 				if (result == ERROR_SUCCESS) {
 					RegCloseKey(hAppKey);
 					RegCloseKey(hUninstallKey);
-					return std::string(installLocation);  // Return install location
+					return string(installLocation);  // Return install location
 				}
 			}
 		}
@@ -149,20 +149,33 @@ static string GetInstallLocation(const string& programName) {
 	return "";  // Program not found
 }
 
+bool removeFile(const string& filePath) {
+	while (fs::exists(filePath)) {
+		// Try to remove the file
+		std::error_code ec;  // To avoid throwing exceptions
+		fs::remove(filePath, ec);
+		if (!ec) {
+			// File removed successfully
+			return true;
+		}
+		// If removal failed, wait for a short duration before retrying
+		Sleep(100);
+	}
+	// If the file doesn't exist, return true since it is already "removed"
+	return true;
+}
+
 void CleanUp()
 {
-	// Wait until it's definitely terminated.
-	Sleep(2000);
-
 	// Delete DLL file
-	fs::remove(dllPath.c_str());
+	removeFile(dllPath);
 
 	// Delete
 	if (deleteModFlag)
 	{
-		fs::remove(kunModPath.c_str());
+		removeFile(kunModPath);
 		// Try to delete the ~mod folder, won't delete if files inside
-		fs::remove(modPath);
+		removeFile(modPath);
 	}
 }
 
