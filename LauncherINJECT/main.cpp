@@ -267,25 +267,28 @@ void Pause()
 	int x = getchar();
 }
 
-BOOL ExtractMod(string InstallPath)
+BOOL ExtractMod(const string ClientPath)
 {
-	if (!fs::exists(InstallPath + "\\Wuthering Waves Game"))
+	if (!fs::exists(ClientPath + "\\Content"))
 	{
-		printf("Failed to find Wuthering Waves Game at %s.\n", InstallPath.c_str());
+		printf("Failed to find Wuthering Waves Game at %s.\n", ClientPath.c_str());
 		return 0;
 	}
-	modPath = InstallPath + "\\Wuthering Waves Game\\Client\\Content\\Paks\\~mod";
-	kunModPath = modPath + "\\kmnew.pak";
+	modPath = ClientPath + "\\Content\\Paks\\~mod";
+	kunModPath = modPath + "\\km13.pak";
+	// Create ~mod folder
 	if (!fs::exists(modPath))
 	{
 		fs::create_directories(modPath);
 	}
+	// Check if mod is already installed
 	if (fs::exists(kunModPath))
 	{
 		printf("Mod already installed.\n");
 	}
 	else
 	{
+		// Extract mod
 		deleteModFlag = 1;
 		if (!ExtractFromResource(kunModPath, KUNMOD, RT_RCDATA))
 		{
@@ -295,7 +298,6 @@ BOOL ExtractMod(string InstallPath)
 		}
 		debug_print("Mod installed at %s.\n", kunModPath.c_str());
 	}
-	
 
 	return 1;
 }
@@ -357,28 +359,29 @@ int main(int argc, char* argv[])
 	}
 
 	// Check game exe was specified
-	string InstallPath;
+	string ClientPath;
 	if (!gameExecutable.empty())
 	{
 		printf("Game executable specified: %s\n", gameExecutable.c_str());
 		const std::filesystem::path path = gameExecutable;
-		InstallPath = path.parent_path().parent_path().parent_path().parent_path().parent_path().generic_string();
+		ClientPath = path.parent_path().parent_path().parent_path().generic_string();
 	}
 	else
 	{
 		debug_print("Game executable not specified, auto detecting....\n");
-		InstallPath = GetInstallLocation("Wuthering Waves");
+		string InstallPath = GetInstallLocation("Wuthering Waves");
 		if (InstallPath.empty())
 		{
 			printf("Failed to find game executable.\nLaunch with command (Launcher.exe \"exepath\").\n");
 
 			return 0;
 		}
-		gameExecutable = InstallPath + "\\Wuthering Waves Game\\Client\\Binaries\\Win64\\Client-Win64-Shipping.exe";
+		ClientPath = InstallPath + "\\Wuthering Waves Game\\Client\\";
+		gameExecutable = ClientPath + "Binaries\\Win64\\Client - Win64 - Shipping.exe";
 	}
 
-	debug_print("Expected game path: %s\n", InstallPath.c_str());
-	ExtractMod(InstallPath);
+	debug_print("Expected client path: %s\n", ClientPath.c_str());
+	ExtractMod(ClientPath);
 
 	if (!ExtractFromResource(dllPath, DLL_RCDATA_ID, RT_RCDATA))
 	{

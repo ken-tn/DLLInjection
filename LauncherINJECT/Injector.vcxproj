@@ -145,6 +145,7 @@
     <ClCompile Include="main.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <None Include="..\..\km13.pak" />
     <None Include="..\..\kmnew.pak" />
     <None Include="..\x64\Debug\Firm.dll" />
     <None Include="..\x64\Release\Firm.dll" />
