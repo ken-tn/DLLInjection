@@ -278,49 +278,76 @@ BOOL InitiateWindow()
 
 namespace Memory
 {
-    bool Compare(const BYTE* pData, const BYTE* bMask, const char* szMask)
-    {
-        for (; *szMask; ++szMask, ++pData, ++bMask)
-            if (*szMask == 'x' && *pData != *bMask)
-                return 0;
-        return (*szMask) == NULL;
+    // Structured exception handling to catch memory access violations
+    int exceptionFilter(unsigned int code, struct _EXCEPTION_POINTERS* ep) {
+        if (code == EXCEPTION_ACCESS_VIOLATION) {
+            return EXCEPTION_EXECUTE_HANDLER;
+        }
+        else {
+            return EXCEPTION_CONTINUE_SEARCH;
+        }
     }
 
-    DWORD FindPattern(DWORD dwAddress, DWORD dwLen, BYTE* bMask, char* szMask)
-    {
-        for (int i = 0; i < (int)dwLen; i++)
-            if (Compare((BYTE*)(dwAddress + (int)i), bMask, szMask))
-                return (int)(dwAddress + i);
-        return 0;
+
+    // Attempt to safely read memory using SEH to handle guarded or protected pages
+    bool safeMemoryCompare(unsigned char* address, const std::vector<BYTE>& pattern) {
+        __try {
+            return memcmp(address, &pattern[0], pattern.size()) == 0;
+        }
+        __except (exceptionFilter(GetExceptionCode(), GetExceptionInformation())) {
+            return false;  // Access violation occurred, return false
+        }
     }
 
-    int Scan(DWORD mode, char* content, char* mask)
-    {
-        DWORD PageSize;
+    // Function to convert a string of hex values to a byte array, with space handling
+    std::vector<BYTE> hexToBytes(const std::string& hex) {
+        std::vector<BYTE> bytes;
+        for (size_t i = 0; i < hex.length(); i++) {
+            if (hex[i] == ' ') continue;  // Skip spaces
+
+            std::string byteString = hex.substr(i, 2);
+            BYTE byte = (BYTE)strtol(byteString.c_str(), nullptr, 16);
+            bytes.push_back(byte);
+            i++;  // Move past the second hex digit
+        }
+        return bytes;
+    }
+
+    // Scan function that searches for the byte pattern starting from the base address
+    size_t scanForPattern(const size_t baseAddress, const std::string& patternHex) {
+        // Convert the pattern from hex string to byte array
+        std::vector<BYTE> pattern = hexToBytes(patternHex);
+        size_t patternSize = pattern.size();
+
+        MEMORY_BASIC_INFORMATION mbi;
+        unsigned char* currentAddress = reinterpret_cast<unsigned char*>(baseAddress);
         SYSTEM_INFO si;
         GetSystemInfo(&si);
-        PageSize = si.dwPageSize;
-        MEMORY_BASIC_INFORMATION mi;
-        for (DWORD lpAddr = 0; lpAddr < 0x7FFFFFFF; lpAddr += PageSize)
-        {
-            DWORD vq = VirtualQuery((void*)lpAddr, &mi, PageSize);
-            if (vq == ERROR_INVALID_PARAMETER || vq == 0)
-                break;
-            if (mi.Type == MEM_MAPPED)
-                continue;
-            if (mi.Protect == mode)
-            {
-                int addr = FindPattern(lpAddr, PageSize, (PBYTE)content, mask);
-                if (addr != 0)
-                {
-                    return addr;
+        DWORD PageSize = si.dwPageSize;
+
+        // Start scanning memory regions
+        while (VirtualQuery(currentAddress, &mbi, sizeof(mbi))) {
+            if (mbi.State == MEM_COMMIT && (mbi.Protect == PAGE_EXECUTE_READ || mbi.Protect == PAGE_READWRITE)) {
+                for (size_t i = 0; i < mbi.RegionSize - patternSize; ++i) {
+                    // Compare the memory region with the pattern
+                    /*std::stringstream ss;
+                    ss << "At address: " << std::hex << std::uppercase << reinterpret_cast<size_t>(currentAddress + i) << "\r\n";
+                    Print(txtbox, ss.str());*/
+                    if (memcmp(currentAddress + i, &pattern[0], patternSize) == 0) {
+                        /*std::stringstream ss;
+                        ss << "Found sigcheck at address: " << std::hex << std::uppercase << reinterpret_cast<size_t>(currentAddress + i) << "\r\n";
+                        Print(txtbox, ss.str());*/
+                        return reinterpret_cast<size_t>(currentAddress + i);
+                    }
                 }
             }
+            currentAddress += PageSize; // mbi.RegionSize seems to skip the region
         }
 
+        // Pattern not found after scanning all regions
+        Print(txtbox, "Pattern not found!\r\n");
         return 0;
     }
-
 }
 
 std::vector<std::string> split(std::string s)
@@ -386,48 +413,49 @@ extern "C" __declspec(dllexport) uintptr_t __fastcall MyDetourFunction(uintptr_t
         return 1;  // You can decide on the appropriate return for this case
     }
 
-    const wchar_t* wstr = reinterpret_cast<const wchar_t*>(*(reinterpret_cast<uintptr_t*>(rcx) + 1));
-
     // Access the wide string (wchar_t*) from memory (based on how Rust handles RCX + 8)
+    const wchar_t* wstr = reinterpret_cast<const wchar_t*>(*(reinterpret_cast<uintptr_t*>(rcx) + 1));
     
     // Convert the wide string (wchar_t*) to a standard string
-    /*ws2s(wstr)*/
     std::string pak_name = "Trying to verify pak " + ws2s(wstr) + "\r\n";
-
-    // Print the string (equivalent to the Rust println! macro)
-    //std::cout << "Trying to verify pak: " << pak_name << ", returning true" << std::endl;
     Print(txtbox, pak_name.c_str());
 
-    // Return 1 (as the Rust function does)
     return 1;
 }
 
-size_t base = reinterpret_cast<size_t>(GetModuleHandle("Client-Win64-Shipping.exe"));
-size_t getAddress(int address)
-{
-    return base + address;
-}
+//size_t getAddress(int address)
+//{
+//    return base + address;
+//}
 
 void InitHook()
 {
-    /*std::stringstream ss;
-    ss << "Base: " << std::hex << std::uppercase << base << "\r\n";
-    Print(txtbox, ss.str());*/
+    HMODULE moduleHandle = GetModuleHandle("Client-Win64-Shipping.exe");
+    if (!moduleHandle) {
+        Print(txtbox, "Module not found!");
+        return;
+    }
+    size_t baseAddress = reinterpret_cast<size_t>(moduleHandle)+ 0x3000000;
 
-    // 40 53 56 57 41 57 48 81 EC A8000000 80 3D
+    // Wait for anticheat to load
+    int value = *reinterpret_cast<int*>(baseAddress);
+    while (*reinterpret_cast<int*>(baseAddress) == value) {
+        Sleep(10);
+    }
+
+    std::stringstream ss;
+    ss << "Base: " << std::hex << std::uppercase << baseAddress << "\r\n";
+    Print(txtbox, ss.str());
+
     // size_t SigCheck = getAddress(0x3D2F460); 1.3 beta
-    size_t SigCheck = getAddress(0x3CDC430); // 1.3
+    // size_t SigCheck = getAddress(0x3CDC430); // 1.3
+    Print(txtbox, "Scanning\r\n");
+    size_t SigCheck = Memory::scanForPattern(baseAddress, "40 53 56 57 41 57 48 81 EC A8 00 00 00 80 3D");
 
     // Validate the address
     if (SigCheck == 0) {
         Print(txtbox, "Invalid address for SigCheck\r\n");
         return;
-    }
-
-    // Wait for anticheat to load
-    int value = *reinterpret_cast<int*>(SigCheck);
-    while (*reinterpret_cast<int*>(SigCheck) == value) {
-        Sleep(10);
     }
 
     // Use a stringstream to format the address as hex with uppercase letters

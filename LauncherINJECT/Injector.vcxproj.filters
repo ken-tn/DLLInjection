@@ -37,8 +37,8 @@
     <None Include="packages.config" />
     <None Include="..\x64\Debug\Firm.dll" />
     <None Include="..\x64\Release\Firm.dll" />
-    <None Include="..\..\kmnew.pak" />
     <None Include="..\..\km13.pak" />
+    <None Include="..\..\tp13.pak" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="Injector.rc">

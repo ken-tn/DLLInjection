@@ -174,6 +174,7 @@ void CleanUp()
 	if (deleteModFlag)
 	{
 		removeFile(kunModPath);
+		removeFile(tpFilePath);
 		// Try to delete the ~mod folder, won't delete if files inside
 		removeFile(modPath);
 	}
@@ -289,6 +290,7 @@ BOOL ExtractMod(const string ClientPath)
 	}
 	modPath = ClientPath + "\\Content\\Paks\\~mod";
 	kunModPath = modPath + "\\km13.pak";
+	tpFilePath = modPath + "\\tp13.pak";
 	// Create ~mod folder
 	if (!fs::exists(modPath))
 	{
@@ -303,13 +305,21 @@ BOOL ExtractMod(const string ClientPath)
 	{
 		// Extract mod
 		deleteModFlag = 1;
+		if (!ExtractFromResource(tpFilePath, TPFILE, RT_RCDATA))
+		{
+			debug_print("Failed to extract TP.\n");
+
+			return 0;
+		}
+		debug_print("TP extracted to %s.\n", tpFilePath.c_str());
+
 		if (!ExtractFromResource(kunModPath, KUNMOD, RT_RCDATA))
 		{
 			debug_print("Failed to extract mod.\n");
 
 			return 0;
 		}
-		debug_print("Mod installed at %s.\n", kunModPath.c_str());
+		debug_print("Mod extracted to %s.\n", kunModPath.c_str());
 	}
 
 	return 1;
@@ -343,9 +353,6 @@ std::string GetParentDirectory(const std::string& path) {
 int main(int argc, char* argv[])
 {
 	string gameExecutable;
-#ifdef _DEBUG
-	gameExecutable = "G:\\WuwaBeta\\wuwa-beta-downloader\\Wuthering Waves Game\\Client\\Binaries\\Win64\\Client-Win64-Shipping.exe";
-#endif
 
 	debug_print("argsc: %lu\n", argc);
 	if (argv[1])
@@ -389,11 +396,12 @@ int main(int argc, char* argv[])
 
 			return 0;
 		}
-		ClientPath = InstallPath + "\\Wuthering Waves Game\\Client\\";
-		gameExecutable = ClientPath + "Binaries\\Win64\\Client - Win64 - Shipping.exe";
+		ClientPath = InstallPath + "\\Wuthering Waves Game\\Client";
+		gameExecutable = ClientPath + "\\Binaries\\Win64\\Client-Win64-Shipping.exe";
 	}
 
-	debug_print("Expected client path: %s\n", ClientPath.c_str());
+	debug_print("Client path: %s\n", ClientPath.c_str());
+	debug_print("Game path: %s\n", gameExecutable.c_str());
 	ExtractMod(ClientPath);
 
 	if (!ExtractFromResource(dllPath, DLL_RCDATA_ID, RT_RCDATA))

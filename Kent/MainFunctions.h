@@ -7,6 +7,7 @@
 namespace fs = std::filesystem;
 using std::string;
 using std::thread;
+using std::vector;
 
 // Define a structure that resembles the Rust `Registers` structure.
 // You may need to adjust this based on the actual structure in use.

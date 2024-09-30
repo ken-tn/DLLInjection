@@ -8,6 +8,7 @@ string dllPath = fs::temp_directory_path().generic_string() + "Firm.dll";  // Te
 string icoPath = fs::temp_directory_path().generic_string() + "shorekeeper.ico";  // Temporary path to extract the icon
 string modPath = "";
 string kunModPath = "";  // Temporary path to extract the DLL
+string tpFilePath = "";
 BOOL deleteModFlag = 0;
 BOOL doInjectionFlag = 1;
 
