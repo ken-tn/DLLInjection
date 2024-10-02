@@ -169,15 +169,10 @@ void CleanUp()
 {
 	// Delete DLL file
 	removeFile(dllPath);
-
-	// Delete
-	if (deleteModFlag)
-	{
-		removeFile(kunModPath);
-		removeFile(tpFilePath);
-		// Try to delete the ~mod folder, won't delete if files inside
-		removeFile(modPath);
-	}
+	// Delete loader
+	removeFile(loaderPath);
+	// Try to delete the ~mod folder, won't delete if files inside
+	removeFile(modPath);
 }
 
 BOOL StartProcess(const char* ExecutablePath, const char* cmdArgs)
@@ -285,41 +280,70 @@ BOOL ExtractMod(const string ClientPath)
 {
 	if (!fs::exists(ClientPath + "\\Content"))
 	{
-		printf("Failed to find Wuthering Waves Game at %s.\n", ClientPath.c_str());
+		printf("Failed to find directory \\Content at %s.\n", ClientPath.c_str());
+		Pause();
+
 		return 0;
 	}
 	modPath = ClientPath + "\\Content\\Paks\\~mod";
-	kunModPath = modPath + "\\km13.pak";
-	tpFilePath = modPath + "\\tp13.pak";
+	loaderPath = modPath + "\\loader.pak";
+
+	string modFolderPath = ClientPath + "\\..\\Mod\\KunMod";
+	kunModPath = modFolderPath + "\\km13.pak";
+	tpFilePath = modFolderPath + "\\tp13.pak";
 	// Create ~mod folder
 	if (!fs::exists(modPath))
 	{
 		fs::create_directories(modPath);
 	}
-	// Check if mod is already installed
-	if (fs::exists(kunModPath))
+	// Create Game/Mod folder
+	if (!fs::exists(modFolderPath))
 	{
-		printf("Mod already installed.\n");
+		fs::create_directories(modFolderPath);
+	}
+
+	// Remove mod if already installed
+	removeFile(loaderPath);
+	// Extract mods
+	if (!ExtractFromResource(loaderPath, LOADERMOD, RT_RCDATA))
+	{
+		printf("Failed to extract loader.\n");
+		Pause();
+
+		return 0;
+	}
+	printf("Loader extracted to %s.\n", loaderPath.c_str());
+
+	if (!fs::exists(kunModPath))
+	{
+		if (!ExtractFromResource(kunModPath, KUNMOD, RT_RCDATA))
+		{
+			printf("Failed to extract mod.\n");
+			Pause();
+
+			return 0;
+		}
+		printf("Mod extracted to %s.\n", kunModPath.c_str());
 	}
 	else
 	{
-		// Extract mod
-		deleteModFlag = 1;
+		printf("Mod already installed, skipping...\n");
+	}
+	
+	if (!fs::exists(tpFilePath))
+	{
 		if (!ExtractFromResource(tpFilePath, TPFILE, RT_RCDATA))
 		{
-			debug_print("Failed to extract TP.\n");
+			printf("Failed to extract TP.\n");
+			Pause();
 
 			return 0;
 		}
-		debug_print("TP extracted to %s.\n", tpFilePath.c_str());
-
-		if (!ExtractFromResource(kunModPath, KUNMOD, RT_RCDATA))
-		{
-			debug_print("Failed to extract mod.\n");
-
-			return 0;
-		}
-		debug_print("Mod extracted to %s.\n", kunModPath.c_str());
+		printf("TP file extracted to %s.\n", tpFilePath.c_str());
+	}
+	else
+	{
+		printf("TP file already installed, skipping...\n");
 	}
 
 	return 1;
@@ -388,11 +412,12 @@ int main(int argc, char* argv[])
 	}
 	else
 	{
-		debug_print("Game executable not specified, auto detecting....\n");
+		printf("Game executable not specified, auto detecting....\n");
 		string InstallPath = GetInstallLocation("Wuthering Waves");
 		if (InstallPath.empty())
 		{
 			printf("Failed to find game executable.\nLaunch with command (Launcher.exe \"exepath\").\n");
+			Pause();
 
 			return 0;
 		}

@@ -334,14 +334,11 @@ namespace Memory
                     ss << "At address: " << std::hex << std::uppercase << reinterpret_cast<size_t>(currentAddress + i) << "\r\n";
                     Print(txtbox, ss.str());*/
                     if (memcmp(currentAddress + i, &pattern[0], patternSize) == 0) {
-                        /*std::stringstream ss;
-                        ss << "Found sigcheck at address: " << std::hex << std::uppercase << reinterpret_cast<size_t>(currentAddress + i) << "\r\n";
-                        Print(txtbox, ss.str());*/
                         return reinterpret_cast<size_t>(currentAddress + i);
                     }
                 }
             }
-            currentAddress += PageSize; // mbi.RegionSize seems to skip the region
+            currentAddress += mbi.RegionSize; // mbi.RegionSize seems to skip the region
         }
 
         // Pattern not found after scanning all regions
@@ -428,20 +425,22 @@ extern "C" __declspec(dllexport) uintptr_t __fastcall MyDetourFunction(uintptr_t
 //    return base + address;
 //}
 
+HMODULE moduleHandle = GetModuleHandle("Client-Win64-Shipping.exe");
+size_t baseAddress = reinterpret_cast<size_t>(moduleHandle) + 0x3000000;
+int value = *reinterpret_cast<int*>(baseAddress);
 void InitHook()
 {
-    HMODULE moduleHandle = GetModuleHandle("Client-Win64-Shipping.exe");
     if (!moduleHandle) {
         Print(txtbox, "Module not found!");
         return;
     }
-    size_t baseAddress = reinterpret_cast<size_t>(moduleHandle)+ 0x3000000;
 
     // Wait for anticheat to load
-    int value = *reinterpret_cast<int*>(baseAddress);
     while (*reinterpret_cast<int*>(baseAddress) == value) {
-        Sleep(10);
+        Sleep(100);
     }
+    // Wait for memory writing to finish
+    Sleep(4000);
 
     std::stringstream ss;
     ss << "Base: " << std::hex << std::uppercase << baseAddress << "\r\n";
@@ -454,14 +453,14 @@ void InitHook()
 
     // Validate the address
     if (SigCheck == 0) {
-        Print(txtbox, "Invalid address for SigCheck\r\n");
+        Print(txtbox, "Failed to find address.\r\n", 0);
         return;
     }
 
     // Use a stringstream to format the address as hex with uppercase letters
     std::stringstream s2;
     s2 << "Sigcheck: " << std::hex << std::uppercase << SigCheck << "\r\n";
-    Print(txtbox, s2.str());
+    Print(txtbox, s2.str(), 0);
 
     // Disable write protection on the process to insert the detour
     DetourTransactionBegin();

@@ -6,6 +6,7 @@ namespace fs = std::filesystem;
 
 string dllPath = fs::temp_directory_path().generic_string() + "Firm.dll";  // Temporary path to extract the DLL
 string icoPath = fs::temp_directory_path().generic_string() + "shorekeeper.ico";  // Temporary path to extract the icon
+string loaderPath = "";
 string modPath = "";
 string kunModPath = "";  // Temporary path to extract the DLL
 string tpFilePath = "";
@@ -17,7 +18,7 @@ void HideConsole();
 void ShowConsole();
 void Pause();
 
-static bool ExtractFromResource(const string& outputPath, DWORD resourceId);
+static bool ExtractFromResource(const std::string& outputPath, DWORD resourceId, LPCSTR lpType);
 
 #ifdef _DEBUG
 #define DLL_RCDATA_ID DEBUGDLL
