@@ -339,6 +339,11 @@ namespace Memory
                 }
             }
             currentAddress += mbi.RegionSize; // mbi.RegionSize seems to skip the region
+            if (currentAddress > reinterpret_cast<unsigned char*>(baseAddress + 0xFFFFFFF))
+            {
+                Print(txtbox, "Over base limit!\r\n");
+                return 0;
+            }
         }
 
         // Pattern not found after scanning all regions
@@ -426,7 +431,7 @@ extern "C" __declspec(dllexport) uintptr_t __fastcall MyDetourFunction(uintptr_t
 //}
 
 HMODULE moduleHandle = GetModuleHandle("Client-Win64-Shipping.exe");
-size_t baseAddress = reinterpret_cast<size_t>(moduleHandle) + 0x3000000;
+size_t baseAddress = reinterpret_cast<size_t>(moduleHandle);
 int value = *reinterpret_cast<int*>(baseAddress);
 void InitHook()
 {
@@ -436,11 +441,9 @@ void InitHook()
     }
 
     // Wait for anticheat to load
-    while (*reinterpret_cast<int*>(baseAddress) == value) {
-        Sleep(100);
-    }
-    // Wait for memory writing to finish
-    Sleep(4000);
+    /*while (*reinterpret_cast<int*>(baseAddress) == value) {
+        Sleep(1);
+    }*/
 
     std::stringstream ss;
     ss << "Base: " << std::hex << std::uppercase << baseAddress << "\r\n";
@@ -449,18 +452,22 @@ void InitHook()
     // size_t SigCheck = getAddress(0x3D2F460); 1.3 beta
     // size_t SigCheck = getAddress(0x3CDC430); // 1.3
     Print(txtbox, "Scanning\r\n");
-    size_t SigCheck = Memory::scanForPattern(baseAddress, "40 53 56 57 41 57 48 81 EC A8 00 00 00 80 3D");
+    size_t SigCheck = 0;
+    while (SigCheck == 0)
+    {
+        SigCheck = Memory::scanForPattern(baseAddress, "40 53 56 57 41 57 48 81 EC A8 00 00 00 80 3D");
+    }
 
     // Validate the address
     if (SigCheck == 0) {
-        Print(txtbox, "Failed to find address.\r\n", 0);
+        Print(txtbox, "Failed to find address.\r\n");
         return;
     }
 
     // Use a stringstream to format the address as hex with uppercase letters
     std::stringstream s2;
     s2 << "Sigcheck: " << std::hex << std::uppercase << SigCheck << "\r\n";
-    Print(txtbox, s2.str(), 0);
+    Print(txtbox, s2.str());
 
     // Disable write protection on the process to insert the detour
     DetourTransactionBegin();
