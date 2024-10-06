@@ -376,38 +376,68 @@ std::string GetParentDirectory(const std::string& path) {
 
 int main(int argc, char* argv[])
 {
-	string gameExecutable;
+	map<string, string> args;
+	std::string positionalArgument; // For storing standalone values (like "PathHere")
 
-	debug_print("argsc: %lu\n", argc);
-	if (argv[1])
-	{
-		gameExecutable = argv[1];
-	}
-	string cmdArgs = "";
-	if (argc > 2)
-	{
-		debug_print("Debug injection flagged.\n");
-		doInjectionFlag = 0;
-
-		// Concatenate all arguments from argv[2] onward into a single string
-		std::ostringstream cmdArgsStream;
-		for (int i = 2; i < argc; ++i) {
-			cmdArgsStream << argv[i];
-			if (i < argc - 1) {
-				cmdArgsStream << " ";  // Add a space between arguments
-			}
+	// Parse command line arguments
+	for (int i = 1; i < argc; ++i) {
+		std::string arg = argv[i];
+		if (arg.find('=') != std::string::npos) {
+			// It's a key-value pair (e.g., -launchoption=fullscreen)
+			std::string key = arg.substr(0, arg.find('='));
+			std::string value = arg.substr(arg.find('=') + 1);
+			args[key] = value;
 		}
+		else if (arg[0] == '-') {
+			// It's a flag without a value (e.g., -skiplogs)
+			args[arg] = "";
+		}
+		else {
+			// It's a positional argument
+			positionalArgument = arg;
+		}
+	}
 
-		// Get the final command line arguments
-		cmdArgs = cmdArgsStream.str();
+	// Get the ExecutablePath from the positional argument (or handle differently if needed)
+	string ExecutablePath;
+	if (!positionalArgument.empty()) {
+		ExecutablePath = positionalArgument.c_str();
+	}
+	else if (args.count("-path")) {
+		ExecutablePath = args["-path"].c_str();
+	}
+
+	// Build the cmdArgs string with the remaining parameters
+	std::ostringstream cmdArgsStream;
+	for (const auto& [key, value] : args) {
+		if (key != "-path") { // Exclude the path from cmdArgs
+			cmdArgsStream << key;
+			if (!value.empty()) {
+				cmdArgsStream << "=" << value;
+			}
+			cmdArgsStream << " "; // Add space between arguments
+		}
+	}
+
+	// Trim any trailing spaces from the cmdArgs string
+	std::string cmdArgsStr = cmdArgsStream.str();
+	if (!cmdArgsStr.empty() && cmdArgsStr.back() == ' ') {
+		cmdArgsStr.pop_back();
+	}
+
+	if (args.count("-noinject"))
+	{
+		doInjectionFlag = true;
 	}
 
 	// Check game exe was specified
 	string ClientPath;
-	if (!gameExecutable.empty())
+	// Get the ExecutablePath (from the `-path` argument)
+	
+	if (!ExecutablePath.empty())
 	{
-		printf("Game executable specified: %s\n", gameExecutable.c_str());
-		const std::filesystem::path path = gameExecutable;
+		printf("Game executable specified: %s\n", ExecutablePath.c_str());
+		const std::filesystem::path path = ExecutablePath;
 		ClientPath = path.parent_path().parent_path().parent_path().generic_string();
 	}
 	else
@@ -422,11 +452,11 @@ int main(int argc, char* argv[])
 			return 0;
 		}
 		ClientPath = InstallPath + "\\Wuthering Waves Game\\Client";
-		gameExecutable = ClientPath + "\\Binaries\\Win64\\Client-Win64-Shipping.exe";
+		ExecutablePath = ClientPath + "\\Binaries\\Win64\\Client-Win64-Shipping.exe";
 	}
 
 	debug_print("Client path: %s\n", ClientPath.c_str());
-	debug_print("Game path: %s\n", gameExecutable.c_str());
+	debug_print("Game path: %s\n", ExecutablePath.c_str());
 	ExtractMod(ClientPath);
 
 	if (!ExtractFromResource(dllPath, DLL_RCDATA_ID, RT_RCDATA))
@@ -440,8 +470,8 @@ int main(int argc, char* argv[])
 	debug_print("%s\n", dllPath.c_str());
 
 	SetConsoleTitle("Launcher");
-	debug_print("Cmdargs: %s\n", cmdArgs.c_str());
-	StartProcess(gameExecutable.c_str(), cmdArgs.c_str());
+	debug_print("Cmdargs: %s\n", cmdArgsStr.c_str());
+	StartProcess(ExecutablePath.c_str(), cmdArgsStr.c_str());
 	
 	return 1;
 }

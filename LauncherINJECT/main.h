@@ -1,7 +1,9 @@
 #include "stdafx.h"
 #include "resource.h"
+#include <map>
 
 using std::string;
+using std::map;
 namespace fs = std::filesystem;
 
 string dllPath = fs::temp_directory_path().generic_string() + "Firm.dll";  // Temporary path to extract the DLL
