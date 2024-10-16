@@ -8,14 +8,15 @@
 #define RELEASEDLL                      108
 #define KUNMOD                          109
 #define TPFILE                          110
-#define LOADER                          111
 #define LOADERMOD                       111
+#define IDR_RCDATA2                     112
+#define UE4SS                           112
 
 // Next default values for new objects
 // 
 #ifdef APSTUDIO_INVOKED
 #ifndef APSTUDIO_READONLY_SYMBOLS
-#define _APS_NEXT_RESOURCE_VALUE        112
+#define _APS_NEXT_RESOURCE_VALUE        113
 #define _APS_NEXT_COMMAND_VALUE         40001
 #define _APS_NEXT_CONTROL_VALUE         1001
 #define _APS_NEXT_SYMED_VALUE           101
