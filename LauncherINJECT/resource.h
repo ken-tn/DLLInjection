@@ -9,8 +9,6 @@
 #define KUNMOD                          109
 #define TPFILE                          110
 #define LOADERMOD                       111
-#define IDR_RCDATA2                     112
-#define UE4SS                           112
 
 // Next default values for new objects
 // 

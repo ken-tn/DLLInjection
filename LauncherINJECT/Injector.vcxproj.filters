@@ -40,7 +40,6 @@
     <None Include="..\..\tp13.pak" />
     <None Include="..\..\km13.pak" />
     <None Include="..\..\loader.pak" />
-    <None Include="G:\WuwaBeta\wuwa-beta-downloader\Wuthering Waves Game\Client\Binaries\Win64\UE4SS.dll" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="Injector.rc">

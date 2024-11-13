@@ -455,7 +455,7 @@ void InitHook()
     size_t SigCheck = 0;
     while (SigCheck == 0)
     {
-        SigCheck = Memory::scanForPattern(baseAddress, "40 53 56 57 41 57 48 81 EC A8 00 00 00 80 3D");
+        SigCheck = Memory::scanForPattern(baseAddress, "40 55 53 56 41 54 41 57 48 8D 6C 24 C9 48 81 EC F0 00 00 00 80 3D");
     }
 
     // Validate the address
