@@ -20,3 +20,4 @@ HICON hIcon;
 HINSTANCE DllInstance;
 HANDLE mthread = nullptr;
 void Print(HWND hWndEdit, std::string pszText, int debug);
+const char* windowTitle = "Launcher v2.1";

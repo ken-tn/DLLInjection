@@ -286,11 +286,11 @@ BOOL ExtractMod(const string ClientPath)
 		return 0;
 	}
 	modPath = ClientPath + "\\Content\\Paks\\~mod";
-	loaderPath = modPath + "\\loader.pak";
+	loaderPath = modPath + loadFile;
 
 	string modFolderPath = ClientPath + "\\..\\Mod\\KunMod";
-	kunModPath = modFolderPath + "\\km13.pak";
-	tpFilePath = modFolderPath + "\\tp13.pak";
+	kunModPath = modFolderPath + kunModFile;
+	tpFilePath = modFolderPath + tpFile;
 	// Create ~mod folder
 	if (!fs::exists(modPath))
 	{

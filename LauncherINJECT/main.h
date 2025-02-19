@@ -7,11 +7,14 @@ using std::map;
 namespace fs = std::filesystem;
 
 string dllPath = fs::temp_directory_path().generic_string() + "Firm.dll";  // Temporary path to extract the DLL
-string icoPath = fs::temp_directory_path().generic_string() + "shorekeeper.ico";  // Temporary path to extract the icon
+string icoPath = fs::temp_directory_path().generic_string() + "T_IconRoleHead256_29_UI.ico";  // Temporary path to extract the icon
 string loaderPath = "";
 string modPath = "";
 string kunModPath = "";  // Temporary path to extract the DLL
 string tpFilePath = "";
+string loadFile = "\\loader.pak";
+string kunModFile = "\\km14.pak";
+string tpFile = "\\tp14.pak";
 BOOL deleteModFlag = 0;
 BOOL doInjectionFlag = 1;
 

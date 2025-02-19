@@ -50,7 +50,7 @@ LRESULT CALLBACK DLLWindowProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lP
     case WM_CTLCOLORSTATIC:
     {
         HDC hEdit = (HDC)wParam;
-        SetTextColor(hEdit, RGB(6, 121, 158));
+        SetTextColor(hEdit, RGB(122, 0, 0));
         SetBkColor(hEdit, RGB(255, 255, 255));
         return (LRESULT)GetStockObject(WHITE_BRUSH);
     }
@@ -238,7 +238,7 @@ BOOL InitiateWindow()
 
     char windowName[50];
 
-    _snprintf_s(windowName, 50, "Launcher v1.3");
+    _snprintf_s(windowName, 50, windowTitle);
 
     // ParentWindow = FindWindow(NULL, "ROBLOX");
     if (!CreateWindowMenu())
@@ -451,11 +451,12 @@ void InitHook()
 
     // size_t SigCheck = getAddress(0x3D2F460); 1.3 beta
     // size_t SigCheck = getAddress(0x3CDC430); // 1.3
+    // 1440A6840 2.1
     Print(txtbox, "Scanning\r\n");
     size_t SigCheck = 0;
     while (SigCheck == 0)
     {
-        SigCheck = Memory::scanForPattern(baseAddress, "40 55 53 56 41 54 41 57 48 8D 6C 24 C9 48 81 EC F0 00 00 00 80 3D");
+        SigCheck = Memory::scanForPattern(baseAddress, "40 55 56 57 41 57 48 8D 6C 24 C1 48 81 EC E8 00");
     }
 
     // Validate the address

@@ -159,7 +159,7 @@
     <ResourceCompile Include="Firm1.rc" />
   </ItemGroup>
   <ItemGroup>
-    <Image Include="F:\Users\kent9\Downloads\Shorekeeper.ico" />
+    <Image Include="F:\Users\kent9\Downloads\T_IconRoleHead256_29_UI.ico" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

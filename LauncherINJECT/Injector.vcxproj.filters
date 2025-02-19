@@ -35,11 +35,9 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />
-    <None Include="..\x64\Debug\Firm.dll" />
-    <None Include="..\x64\Release\Firm.dll" />
-    <None Include="..\..\tp13.pak" />
-    <None Include="..\..\km13.pak" />
     <None Include="..\..\loader.pak" />
+    <None Include="..\..\km14.pak" />
+    <None Include="..\..\tp14.pak" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="Injector.rc">
@@ -47,7 +45,7 @@
     </ResourceCompile>
   </ItemGroup>
   <ItemGroup>
-    <Image Include="F:\Users\kent9\Downloads\Shorekeeper.ico">
+    <Image Include="F:\Users\kent9\Downloads\T_IconRoleHead256_29_UI.ico">
       <Filter>Resource Files</Filter>
     </Image>
   </ItemGroup>
